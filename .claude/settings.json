@@ -1,0 +1,41 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__ide__getDiagnostics",
+      "WebFetch(domain:support.google.com)",
+      "WebFetch(domain:developers.google.com)",
+      "WebSearch",
+      "Bash(ls:*)",
+      "Bash(bun run dev:*)",
+      "Bash(bun run start:*)",
+      "Bash(bun run test:*)",
+      "Bash(bun run lint:*)",
+      "Bash(bun run format:*)",
+      "Bash(bun install:*)",
+      "Bash(bun add:*)",
+      "Bash(bun outdated:*)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bun run format"
+          }
+        ]
+      },
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bun run format"
+          }
+        ]
+      }
+    ]
+  }
+}

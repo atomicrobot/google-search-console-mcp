@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "noEmit": true,
+    "types": ["@types/bun"],
+    "baseUrl": ".",
+    "paths": {
+      "@config": ["./src/config.ts"],
+      "@auth/*": ["./src/auth/*"],
+      "@lib/*": ["./src/lib/*"],
+      "@tools/*": ["./src/tools/*"],
+      "@transport/*": ["./src/transport/*"]
+    }
+  },
+  "include": ["src/**/*.ts"]
+}
