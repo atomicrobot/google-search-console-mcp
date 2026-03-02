@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "bun:test";
 import { loadConfig } from "@config";
-import { testEnv, mockExecuteQuery } from "@tools/test-helpers";
+import { testEnv, mockExecuteQuery, testLog } from "@tools/test-helpers";
 
 import { searchPerformance } from "@tools/search-performance";
 
@@ -12,13 +12,16 @@ describe("searchPerformance", () => {
   });
 
   it("returns expected structure with defaults", async () => {
-    const result = await searchPerformance({
-      dimensions: [],
-      filters: [],
-      order_by: "clicks",
-      order_direction: "desc",
-      row_limit: 100,
-    });
+    const result = await searchPerformance(
+      {
+        dimensions: [],
+        filters: [],
+        order_by: "clicks",
+        order_direction: "desc",
+        row_limit: 100,
+      },
+      testLog,
+    );
 
     expect(result).toHaveProperty("rows");
     expect(result).toHaveProperty("rowCount");
@@ -30,13 +33,16 @@ describe("searchPerformance", () => {
   });
 
   it("applies default date range when not specified", async () => {
-    await searchPerformance({
-      dimensions: [],
-      filters: [],
-      order_by: "clicks",
-      order_direction: "desc",
-      row_limit: 100,
-    });
+    await searchPerformance(
+      {
+        dimensions: [],
+        filters: [],
+        order_by: "clicks",
+        order_direction: "desc",
+        row_limit: 100,
+      },
+      testLog,
+    );
 
     expect(mockExecuteQuery).toHaveBeenCalledTimes(1);
     const call = mockExecuteQuery.mock.calls[0];
@@ -47,15 +53,18 @@ describe("searchPerformance", () => {
   });
 
   it("uses provided date range", async () => {
-    await searchPerformance({
-      start_date: "2025-01-01",
-      end_date: "2025-01-31",
-      dimensions: [],
-      filters: [],
-      order_by: "clicks",
-      order_direction: "desc",
-      row_limit: 100,
-    });
+    await searchPerformance(
+      {
+        start_date: "2025-01-01",
+        end_date: "2025-01-31",
+        dimensions: [],
+        filters: [],
+        order_by: "clicks",
+        order_direction: "desc",
+        row_limit: 100,
+      },
+      testLog,
+    );
 
     const call = mockExecuteQuery.mock.calls[0];
     const { params } = call[0] as { params: Record<string, unknown> };
@@ -64,13 +73,16 @@ describe("searchPerformance", () => {
   });
 
   it("includes dimensions in SQL", async () => {
-    await searchPerformance({
-      dimensions: ["query", "page"],
-      filters: [],
-      order_by: "clicks",
-      order_direction: "desc",
-      row_limit: 100,
-    });
+    await searchPerformance(
+      {
+        dimensions: ["query", "page"],
+        filters: [],
+        order_by: "clicks",
+        order_direction: "desc",
+        row_limit: 100,
+      },
+      testLog,
+    );
 
     const call = mockExecuteQuery.mock.calls[0];
     const { sql } = call[0] as { sql: string };
@@ -79,13 +91,16 @@ describe("searchPerformance", () => {
   });
 
   it("includes filters in SQL", async () => {
-    await searchPerformance({
-      dimensions: [],
-      filters: [{ dimension: "query", operator: "contains", expression: "pricing" }],
-      order_by: "clicks",
-      order_direction: "desc",
-      row_limit: 100,
-    });
+    await searchPerformance(
+      {
+        dimensions: [],
+        filters: [{ dimension: "query", operator: "contains", expression: "pricing" }],
+        order_by: "clicks",
+        order_direction: "desc",
+        row_limit: 100,
+      },
+      testLog,
+    );
 
     const call = mockExecuteQuery.mock.calls[0];
     const { sql, params } = call[0] as { sql: string; params: Record<string, unknown> };
@@ -94,13 +109,16 @@ describe("searchPerformance", () => {
   });
 
   it("applies order_by and order_direction", async () => {
-    await searchPerformance({
-      dimensions: [],
-      filters: [],
-      order_by: "impressions",
-      order_direction: "asc",
-      row_limit: 50,
-    });
+    await searchPerformance(
+      {
+        dimensions: [],
+        filters: [],
+        order_by: "impressions",
+        order_direction: "asc",
+        row_limit: 50,
+      },
+      testLog,
+    );
 
     const call = mockExecuteQuery.mock.calls[0];
     const { sql } = call[0] as { sql: string };
@@ -112,13 +130,16 @@ describe("searchPerformance", () => {
     const mockRows = [{ query: "test", clicks: 100 }];
     mockExecuteQuery.mockResolvedValue(mockRows);
 
-    const result = await searchPerformance({
-      dimensions: ["query"],
-      filters: [],
-      order_by: "clicks",
-      order_direction: "desc",
-      row_limit: 100,
-    });
+    const result = await searchPerformance(
+      {
+        dimensions: ["query"],
+        filters: [],
+        order_by: "clicks",
+        order_direction: "desc",
+        row_limit: 100,
+      },
+      testLog,
+    );
 
     expect(result.rows).toEqual(mockRows);
     expect(result.rowCount).toBe(1);

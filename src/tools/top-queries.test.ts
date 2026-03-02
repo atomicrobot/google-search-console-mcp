@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "bun:test";
 import { loadConfig } from "@config";
-import { testEnv, mockExecuteQuery } from "@tools/test-helpers";
+import { testEnv, mockExecuteQuery, testLog } from "@tools/test-helpers";
 
 import { topQueries } from "@tools/top-queries";
 
@@ -12,11 +12,10 @@ describe("topQueries", () => {
   });
 
   it("returns expected structure with defaults", async () => {
-    const result = await topQueries({
-      metric: "clicks",
-      limit: 20,
-      url_match_type: "contains",
-    });
+    const result = await topQueries(
+      { metric: "clicks", limit: 20, url_match_type: "contains" },
+      testLog,
+    );
 
     expect(result).toHaveProperty("rows");
     expect(result).toHaveProperty("rowCount");
@@ -26,11 +25,7 @@ describe("topQueries", () => {
   });
 
   it("SQL groups by query and orders by metric", async () => {
-    await topQueries({
-      metric: "impressions",
-      limit: 10,
-      url_match_type: "contains",
-    });
+    await topQueries({ metric: "impressions", limit: 10, url_match_type: "contains" }, testLog);
 
     const call = mockExecuteQuery.mock.calls[0];
     const { sql } = call[0] as { sql: string };
@@ -40,11 +35,7 @@ describe("topQueries", () => {
   });
 
   it("orders by position ASC when metric is position", async () => {
-    await topQueries({
-      metric: "position",
-      limit: 20,
-      url_match_type: "contains",
-    });
+    await topQueries({ metric: "position", limit: 20, url_match_type: "contains" }, testLog);
 
     const call = mockExecuteQuery.mock.calls[0];
     const { sql } = call[0] as { sql: string };
@@ -52,12 +43,10 @@ describe("topQueries", () => {
   });
 
   it("includes url_filter when provided", async () => {
-    await topQueries({
-      metric: "clicks",
-      limit: 20,
-      url_filter: "/pricing",
-      url_match_type: "contains",
-    });
+    await topQueries(
+      { metric: "clicks", limit: 20, url_filter: "/pricing", url_match_type: "contains" },
+      testLog,
+    );
 
     const call = mockExecuteQuery.mock.calls[0];
     const { sql, params } = call[0] as { sql: string; params: Record<string, unknown> };
@@ -66,12 +55,10 @@ describe("topQueries", () => {
   });
 
   it("includes query_filter when provided", async () => {
-    await topQueries({
-      metric: "clicks",
-      limit: 20,
-      query_filter: "how to",
-      url_match_type: "contains",
-    });
+    await topQueries(
+      { metric: "clicks", limit: 20, query_filter: "how to", url_match_type: "contains" },
+      testLog,
+    );
 
     const call = mockExecuteQuery.mock.calls[0];
     const { sql, params } = call[0] as { sql: string; params: Record<string, unknown> };
@@ -80,13 +67,16 @@ describe("topQueries", () => {
   });
 
   it("uses provided date range", async () => {
-    await topQueries({
-      start_date: "2025-02-01",
-      end_date: "2025-02-28",
-      metric: "clicks",
-      limit: 20,
-      url_match_type: "contains",
-    });
+    await topQueries(
+      {
+        start_date: "2025-02-01",
+        end_date: "2025-02-28",
+        metric: "clicks",
+        limit: 20,
+        url_match_type: "contains",
+      },
+      testLog,
+    );
 
     const call = mockExecuteQuery.mock.calls[0];
     const { params } = call[0] as { params: Record<string, unknown> };
@@ -98,11 +88,10 @@ describe("topQueries", () => {
     const mockRows = [{ query: "pricing", clicks: 200 }];
     mockExecuteQuery.mockResolvedValue(mockRows);
 
-    const result = await topQueries({
-      metric: "clicks",
-      limit: 20,
-      url_match_type: "contains",
-    });
+    const result = await topQueries(
+      { metric: "clicks", limit: 20, url_match_type: "contains" },
+      testLog,
+    );
 
     expect(result.rows).toEqual(mockRows);
     expect(result.rowCount).toBe(1);

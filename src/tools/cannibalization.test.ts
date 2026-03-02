@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "bun:test";
 import { loadConfig } from "@config";
-import { testEnv, mockExecuteQuery } from "@tools/test-helpers";
+import { testEnv, mockExecuteQuery, testLog } from "@tools/test-helpers";
 
 import { cannibalization } from "@tools/cannibalization";
 
@@ -12,13 +12,16 @@ describe("cannibalization", () => {
   });
 
   it("returns expected structure with defaults", async () => {
-    const result = await cannibalization({
-      min_pages: 2,
-      min_impressions: 10,
-      query_match_type: "contains",
-      url_match_type: "contains",
-      limit: 25,
-    });
+    const result = await cannibalization(
+      {
+        min_pages: 2,
+        min_impressions: 10,
+        query_match_type: "contains",
+        url_match_type: "contains",
+        limit: 25,
+      },
+      testLog,
+    );
 
     expect(result).toHaveProperty("queries");
     expect(result).toHaveProperty("queryCount");
@@ -28,13 +31,16 @@ describe("cannibalization", () => {
   });
 
   it("applies default date range when not specified", async () => {
-    await cannibalization({
-      min_pages: 2,
-      min_impressions: 10,
-      query_match_type: "contains",
-      url_match_type: "contains",
-      limit: 25,
-    });
+    await cannibalization(
+      {
+        min_pages: 2,
+        min_impressions: 10,
+        query_match_type: "contains",
+        url_match_type: "contains",
+        limit: 25,
+      },
+      testLog,
+    );
 
     const call = mockExecuteQuery.mock.calls[0];
     const { params } = call[0] as { params: Record<string, unknown> };
@@ -43,13 +49,16 @@ describe("cannibalization", () => {
   });
 
   it("SQL contains cannibalized_queries CTE with page count filter", async () => {
-    await cannibalization({
-      min_pages: 3,
-      min_impressions: 10,
-      query_match_type: "contains",
-      url_match_type: "contains",
-      limit: 25,
-    });
+    await cannibalization(
+      {
+        min_pages: 3,
+        min_impressions: 10,
+        query_match_type: "contains",
+        url_match_type: "contains",
+        limit: 25,
+      },
+      testLog,
+    );
 
     const call = mockExecuteQuery.mock.calls[0];
     const { sql, params } = call[0] as { sql: string; params: Record<string, unknown> };
@@ -62,14 +71,17 @@ describe("cannibalization", () => {
   });
 
   it("includes query_filter when provided", async () => {
-    await cannibalization({
-      min_pages: 2,
-      min_impressions: 10,
-      query_filter: "guide",
-      query_match_type: "contains",
-      url_match_type: "contains",
-      limit: 25,
-    });
+    await cannibalization(
+      {
+        min_pages: 2,
+        min_impressions: 10,
+        query_filter: "guide",
+        query_match_type: "contains",
+        url_match_type: "contains",
+        limit: 25,
+      },
+      testLog,
+    );
 
     const call = mockExecuteQuery.mock.calls[0];
     const { sql, params } = call[0] as { sql: string; params: Record<string, unknown> };
@@ -78,14 +90,17 @@ describe("cannibalization", () => {
   });
 
   it("includes url_filter when provided", async () => {
-    await cannibalization({
-      min_pages: 2,
-      min_impressions: 10,
-      url_filter: "/blog",
-      url_match_type: "contains",
-      query_match_type: "contains",
-      limit: 25,
-    });
+    await cannibalization(
+      {
+        min_pages: 2,
+        min_impressions: 10,
+        url_filter: "/blog",
+        url_match_type: "contains",
+        query_match_type: "contains",
+        limit: 25,
+      },
+      testLog,
+    );
 
     const call = mockExecuteQuery.mock.calls[0];
     const { params } = call[0] as { params: Record<string, unknown> };
@@ -93,15 +108,18 @@ describe("cannibalization", () => {
   });
 
   it("uses provided date range", async () => {
-    await cannibalization({
-      start_date: "2025-01-01",
-      end_date: "2025-01-31",
-      min_pages: 2,
-      min_impressions: 10,
-      query_match_type: "contains",
-      url_match_type: "contains",
-      limit: 25,
-    });
+    await cannibalization(
+      {
+        start_date: "2025-01-01",
+        end_date: "2025-01-31",
+        min_pages: 2,
+        min_impressions: 10,
+        query_match_type: "contains",
+        url_match_type: "contains",
+        limit: 25,
+      },
+      testLog,
+    );
 
     const call = mockExecuteQuery.mock.calls[0];
     const { params } = call[0] as { params: Record<string, unknown> };
@@ -110,13 +128,16 @@ describe("cannibalization", () => {
   });
 
   it("applies limit to SQL", async () => {
-    await cannibalization({
-      min_pages: 2,
-      min_impressions: 10,
-      query_match_type: "contains",
-      url_match_type: "contains",
-      limit: 10,
-    });
+    await cannibalization(
+      {
+        min_pages: 2,
+        min_impressions: 10,
+        query_match_type: "contains",
+        url_match_type: "contains",
+        limit: 10,
+      },
+      testLog,
+    );
 
     const call = mockExecuteQuery.mock.calls[0];
     const { sql } = call[0] as { sql: string };
@@ -158,13 +179,16 @@ describe("cannibalization", () => {
     ];
     mockExecuteQuery.mockResolvedValue(mockRows);
 
-    const result = await cannibalization({
-      min_pages: 2,
-      min_impressions: 10,
-      query_match_type: "contains",
-      url_match_type: "contains",
-      limit: 25,
-    });
+    const result = await cannibalization(
+      {
+        min_pages: 2,
+        min_impressions: 10,
+        query_match_type: "contains",
+        url_match_type: "contains",
+        limit: 25,
+      },
+      testLog,
+    );
 
     expect(result.queryCount).toBe(2);
     expect(result.queries).toHaveLength(2);

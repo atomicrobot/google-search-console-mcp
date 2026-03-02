@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "bun:test";
 import { loadConfig } from "@config";
-import { testEnv, mockExecuteQuery } from "@tools/test-helpers";
+import { testEnv, mockExecuteQuery, testLog } from "@tools/test-helpers";
 
 import { trendingQueries } from "@tools/trending-queries";
 
@@ -12,14 +12,17 @@ describe("trendingQueries", () => {
   });
 
   it("returns rising/falling structure when direction is both", async () => {
-    const result = await trendingQueries({
-      comparison: "wow",
-      metric: "clicks",
-      direction: "both",
-      min_impressions: 10,
-      limit: 25,
-      url_match_type: "contains",
-    });
+    const result = await trendingQueries(
+      {
+        comparison: "wow",
+        metric: "clicks",
+        direction: "both",
+        min_impressions: 10,
+        limit: 25,
+        url_match_type: "contains",
+      },
+      testLog,
+    );
 
     expect(result).toHaveProperty("rising");
     expect(result).toHaveProperty("falling");
@@ -31,14 +34,17 @@ describe("trendingQueries", () => {
   });
 
   it("returns rows structure when direction is rising", async () => {
-    const result = await trendingQueries({
-      comparison: "wow",
-      metric: "clicks",
-      direction: "rising",
-      min_impressions: 10,
-      limit: 25,
-      url_match_type: "contains",
-    });
+    const result = await trendingQueries(
+      {
+        comparison: "wow",
+        metric: "clicks",
+        direction: "rising",
+        min_impressions: 10,
+        limit: 25,
+        url_match_type: "contains",
+      },
+      testLog,
+    );
 
     expect(result).toHaveProperty("rows");
     expect(result).toHaveProperty("rowCount");
@@ -47,14 +53,17 @@ describe("trendingQueries", () => {
   });
 
   it("SQL contains current_period and previous_period CTEs", async () => {
-    await trendingQueries({
-      comparison: "wow",
-      metric: "clicks",
-      direction: "both",
-      min_impressions: 10,
-      limit: 25,
-      url_match_type: "contains",
-    });
+    await trendingQueries(
+      {
+        comparison: "wow",
+        metric: "clicks",
+        direction: "both",
+        min_impressions: 10,
+        limit: 25,
+        url_match_type: "contains",
+      },
+      testLog,
+    );
 
     const call = mockExecuteQuery.mock.calls[0];
     const { sql } = call[0] as { sql: string };
@@ -64,14 +73,17 @@ describe("trendingQueries", () => {
   });
 
   it("includes min_impressions in params", async () => {
-    await trendingQueries({
-      comparison: "wow",
-      metric: "clicks",
-      direction: "both",
-      min_impressions: 50,
-      limit: 25,
-      url_match_type: "contains",
-    });
+    await trendingQueries(
+      {
+        comparison: "wow",
+        metric: "clicks",
+        direction: "both",
+        min_impressions: 50,
+        limit: 25,
+        url_match_type: "contains",
+      },
+      testLog,
+    );
 
     const call = mockExecuteQuery.mock.calls[0];
     const { params } = call[0] as { params: Record<string, unknown> };
@@ -79,14 +91,17 @@ describe("trendingQueries", () => {
   });
 
   it("applies WHERE delta > 0 for rising direction", async () => {
-    await trendingQueries({
-      comparison: "wow",
-      metric: "clicks",
-      direction: "rising",
-      min_impressions: 10,
-      limit: 25,
-      url_match_type: "contains",
-    });
+    await trendingQueries(
+      {
+        comparison: "wow",
+        metric: "clicks",
+        direction: "rising",
+        min_impressions: 10,
+        limit: 25,
+        url_match_type: "contains",
+      },
+      testLog,
+    );
 
     const call = mockExecuteQuery.mock.calls[0];
     const { sql } = call[0] as { sql: string };
@@ -94,14 +109,17 @@ describe("trendingQueries", () => {
   });
 
   it("applies WHERE delta < 0 for falling direction", async () => {
-    await trendingQueries({
-      comparison: "wow",
-      metric: "clicks",
-      direction: "falling",
-      min_impressions: 10,
-      limit: 25,
-      url_match_type: "contains",
-    });
+    await trendingQueries(
+      {
+        comparison: "wow",
+        metric: "clicks",
+        direction: "falling",
+        min_impressions: 10,
+        limit: 25,
+        url_match_type: "contains",
+      },
+      testLog,
+    );
 
     const call = mockExecuteQuery.mock.calls[0];
     const { sql } = call[0] as { sql: string };
@@ -109,15 +127,18 @@ describe("trendingQueries", () => {
   });
 
   it("includes url_filter when provided", async () => {
-    await trendingQueries({
-      comparison: "wow",
-      metric: "clicks",
-      direction: "both",
-      min_impressions: 10,
-      limit: 25,
-      url_filter: "/blog",
-      url_match_type: "contains",
-    });
+    await trendingQueries(
+      {
+        comparison: "wow",
+        metric: "clicks",
+        direction: "both",
+        min_impressions: 10,
+        limit: 25,
+        url_filter: "/blog",
+        url_match_type: "contains",
+      },
+      testLog,
+    );
 
     const call = mockExecuteQuery.mock.calls[0];
     const { sql, params } = call[0] as { sql: string; params: Record<string, unknown> };
@@ -126,14 +147,17 @@ describe("trendingQueries", () => {
   });
 
   it("applies limit to SQL", async () => {
-    await trendingQueries({
-      comparison: "mom",
-      metric: "impressions",
-      direction: "both",
-      min_impressions: 10,
-      limit: 15,
-      url_match_type: "contains",
-    });
+    await trendingQueries(
+      {
+        comparison: "mom",
+        metric: "impressions",
+        direction: "both",
+        min_impressions: 10,
+        limit: 15,
+        url_match_type: "contains",
+      },
+      testLog,
+    );
 
     const call = mockExecuteQuery.mock.calls[0];
     const { sql } = call[0] as { sql: string };
@@ -147,14 +171,17 @@ describe("trendingQueries", () => {
     ];
     mockExecuteQuery.mockResolvedValue(mockRows);
 
-    const result = await trendingQueries({
-      comparison: "wow",
-      metric: "clicks",
-      direction: "both",
-      min_impressions: 10,
-      limit: 25,
-      url_match_type: "contains",
-    });
+    const result = await trendingQueries(
+      {
+        comparison: "wow",
+        metric: "clicks",
+        direction: "both",
+        min_impressions: 10,
+        limit: 25,
+        url_match_type: "contains",
+      },
+      testLog,
+    );
 
     const bothResult = result as { rising: unknown[]; falling: unknown[] };
     expect(bothResult.rising).toEqual([{ query: "rising-query", delta: 50 }]);
@@ -162,14 +189,17 @@ describe("trendingQueries", () => {
   });
 
   it("uses mom periods when comparison is mom", async () => {
-    const result = await trendingQueries({
-      comparison: "mom",
-      metric: "clicks",
-      direction: "both",
-      min_impressions: 10,
-      limit: 25,
-      url_match_type: "contains",
-    });
+    const result = await trendingQueries(
+      {
+        comparison: "mom",
+        metric: "clicks",
+        direction: "both",
+        min_impressions: 10,
+        limit: 25,
+        url_match_type: "contains",
+      },
+      testLog,
+    );
 
     expect(result.comparison).toBe("mom");
     expect(result.periods).toBeDefined();

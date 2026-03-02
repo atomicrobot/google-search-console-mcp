@@ -7,6 +7,7 @@ import {
   buildQueryFilter,
 } from "@lib/bigquery";
 import { getDefaultDateRange } from "@lib/date-utils";
+import type { RequestLogger } from "@lib/logger";
 
 export const topQueriesInput = z.object({
   start_date: z
@@ -36,7 +37,7 @@ Default: Top 20 queries by clicks over last 28 days.`;
 
 export type TopQueriesInput = z.infer<typeof topQueriesInput>;
 
-export async function topQueries(input: TopQueriesInput, user?: string) {
+export async function topQueries(input: TopQueriesInput, log: RequestLogger) {
   const defaults = getDefaultDateRange();
   const startDate = input.start_date || defaults.startDate;
   const endDate = input.end_date || defaults.endDate;
@@ -69,6 +70,6 @@ export async function topQueries(input: TopQueriesInput, user?: string) {
     LIMIT ${input.limit}
   `;
 
-  const rows = await executeQuery({ sql, params }, { tool: "top_queries", user });
+  const rows = await executeQuery({ sql, params }, log);
   return { rows, rowCount: rows.length, dateRange: { startDate, endDate } };
 }

@@ -25,10 +25,7 @@ export async function handleStreamableHttp(
   const transport = new StreamableHTTPServerTransport({
     sessionIdGenerator: () => crypto.randomUUID(),
     onsessioninitialized: (id) => {
-      logger.info("Streamable HTTP session initialized", {
-        sessionId: id,
-        user: req.user?.email,
-      });
+      req.log.info("Streamable HTTP session initialized", { sessionId: id });
       transports.set(id, transport);
     },
   });

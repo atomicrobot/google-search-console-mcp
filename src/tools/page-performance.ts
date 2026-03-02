@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { executeQuery, getTableRef, ALL_METRICS_SQL, buildUrlFilter } from "@lib/bigquery";
 import { getExtendedDateRange } from "@lib/date-utils";
+import type { RequestLogger } from "@lib/logger";
 
 export const pagePerformanceInput = z.object({
   url: z.string().min(1),
@@ -27,7 +28,7 @@ To find top queries for a page, use top_queries with the same url_filter.`;
 
 export type PagePerformanceInput = z.infer<typeof pagePerformanceInput>;
 
-export async function pagePerformance(input: PagePerformanceInput, user?: string) {
+export async function pagePerformance(input: PagePerformanceInput, log: RequestLogger) {
   const defaults = getExtendedDateRange();
   const startDate = input.start_date || defaults.startDate;
   const endDate = input.end_date || defaults.endDate;
@@ -61,8 +62,8 @@ export async function pagePerformance(input: PagePerformanceInput, user?: string
   `;
 
   const [timeSeries, summary] = await Promise.all([
-    executeQuery({ sql: timeSeriesSql, params }, { tool: "page_performance", user }),
-    executeQuery({ sql: summarySql, params }, { tool: "page_performance", user }),
+    executeQuery({ sql: timeSeriesSql, params }, log),
+    executeQuery({ sql: summarySql, params }, log),
   ]);
 
   return {

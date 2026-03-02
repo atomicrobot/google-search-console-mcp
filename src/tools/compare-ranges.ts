@@ -8,6 +8,7 @@ import {
   type Dimension,
   type FilterSpec,
 } from "@lib/bigquery";
+import type { RequestLogger } from "@lib/logger";
 
 export const compareRangesInput = z.object({
   period1_start: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
@@ -40,7 +41,7 @@ Sorted by biggest absolute change in the primary metric.`;
 
 export type CompareRangesInput = z.infer<typeof compareRangesInput>;
 
-export async function compareRanges(input: CompareRangesInput, user?: string) {
+export async function compareRanges(input: CompareRangesInput, log: RequestLogger) {
   const params: Record<string, unknown> = {
     p1_start: input.period1_start,
     p1_end: input.period1_end,
@@ -88,7 +89,7 @@ export async function compareRanges(input: CompareRangesInput, user?: string) {
     LIMIT ${input.row_limit}
   `;
 
-  const rows = await executeQuery({ sql, params }, { tool: "compare_date_ranges", user });
+  const rows = await executeQuery({ sql, params }, log);
   return {
     rows,
     rowCount: rows.length,

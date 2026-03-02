@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { RequestLogger } from "@lib/logger";
 
 export const listSchemaInput = z.object({});
 
@@ -11,7 +12,9 @@ Returns:
 - Available metrics with descriptions
 - Notes about data freshness and history`;
 
-export function listSchema() {
+export function listSchema(log: RequestLogger) {
+  log.info("Listing schema");
+
   return {
     dimensions: [
       {

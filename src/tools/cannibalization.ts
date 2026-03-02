@@ -7,6 +7,7 @@ import {
   buildQueryFilter,
 } from "@lib/bigquery";
 import { getDefaultDateRange } from "@lib/date-utils";
+import type { RequestLogger } from "@lib/logger";
 
 export const cannibalizationInput = z.object({
   start_date: z
@@ -38,7 +39,7 @@ Pages are sorted by impressions within each query group.`;
 
 export type CannibalizationInput = z.infer<typeof cannibalizationInput>;
 
-export async function cannibalization(input: CannibalizationInput, user?: string) {
+export async function cannibalization(input: CannibalizationInput, log: RequestLogger) {
   const defaults = getDefaultDateRange();
   const startDate = input.start_date || defaults.startDate;
   const endDate = input.end_date || defaults.endDate;
@@ -93,7 +94,7 @@ export async function cannibalization(input: CannibalizationInput, user?: string
     ORDER BY cq.total_impressions DESC, cq.query, pqm.impressions DESC
   `;
 
-  const rows = await executeQuery({ sql, params }, { tool: "cannibalization_check", user });
+  const rows = await executeQuery({ sql, params }, log);
 
   // Group rows by query
   const grouped: Record<

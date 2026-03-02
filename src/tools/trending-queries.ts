@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { executeQuery, getTableRef, ALL_METRICS_SQL, buildUrlFilter } from "@lib/bigquery";
 import { getWowPeriods, getMomPeriods } from "@lib/date-utils";
+import type { RequestLogger } from "@lib/logger";
 
 export const trendingQueriesInput = z.object({
   comparison: z.enum(["wow", "mom"]).default("wow"),
@@ -24,7 +25,7 @@ For custom date range comparisons, use compare_date_ranges instead.`;
 
 export type TrendingQueriesInput = z.infer<typeof trendingQueriesInput>;
 
-export async function trendingQueries(input: TrendingQueriesInput, user?: string) {
+export async function trendingQueries(input: TrendingQueriesInput, log: RequestLogger) {
   const periods = input.comparison === "wow" ? getWowPeriods() : getMomPeriods();
 
   const params: Record<string, unknown> = {
@@ -78,7 +79,7 @@ export async function trendingQueries(input: TrendingQueriesInput, user?: string
     LIMIT ${input.limit}
   `;
 
-  const rows = await executeQuery({ sql, params }, { tool: "trending_queries", user });
+  const rows = await executeQuery({ sql, params }, log);
 
   if (input.direction === "both") {
     const rising = rows.filter((r) => (r.delta as number) > 0);

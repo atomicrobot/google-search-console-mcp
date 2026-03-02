@@ -1,5 +1,5 @@
 import { describe, it, beforeAll, expect } from "bun:test";
-import { setupIntegration, daysAgo } from "@tools/integration-test-helpers";
+import { setupIntegration, daysAgo, integrationTestLog } from "@tools/integration-test-helpers";
 import { compareRanges } from "@tools/compare-ranges";
 
 describe("compareRanges (integration)", () => {
@@ -8,16 +8,19 @@ describe("compareRanges (integration)", () => {
   });
 
   it("returns rows with p1/p2 columns and delta", async () => {
-    const result = await compareRanges({
-      period1_start: daysAgo(28),
-      period1_end: daysAgo(15),
-      period2_start: daysAgo(14),
-      period2_end: daysAgo(1),
-      dimensions: ["query"],
-      filters: [],
-      metric: "clicks",
-      row_limit: 5,
-    });
+    const result = await compareRanges(
+      {
+        period1_start: daysAgo(28),
+        period1_end: daysAgo(15),
+        period2_start: daysAgo(14),
+        period2_end: daysAgo(1),
+        dimensions: ["query"],
+        filters: [],
+        metric: "clicks",
+        row_limit: 5,
+      },
+      integrationTestLog,
+    );
 
     expect(Array.isArray(result.rows)).toBe(true);
     expect(result.rows.length).toBeGreaterThan(0);
@@ -47,16 +50,19 @@ describe("compareRanges (integration)", () => {
     const p2Start = daysAgo(14);
     const p2End = daysAgo(1);
 
-    const result = await compareRanges({
-      period1_start: p1Start,
-      period1_end: p1End,
-      period2_start: p2Start,
-      period2_end: p2End,
-      dimensions: ["query"],
-      filters: [],
-      metric: "clicks",
-      row_limit: 1,
-    });
+    const result = await compareRanges(
+      {
+        period1_start: p1Start,
+        period1_end: p1End,
+        period2_start: p2Start,
+        period2_end: p2End,
+        dimensions: ["query"],
+        filters: [],
+        metric: "clicks",
+        row_limit: 1,
+      },
+      integrationTestLog,
+    );
 
     expect(result.period1).toEqual({ start: p1Start, end: p1End });
     expect(result.period2).toEqual({ start: p2Start, end: p2End });

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { executeQuery, getTableRef, ALL_METRICS_SQL, buildUrlFilter } from "@lib/bigquery";
 import { getDefaultDateRange } from "@lib/date-utils";
+import type { RequestLogger } from "@lib/logger";
 
 export const topPagesInput = z.object({
   start_date: z
@@ -29,7 +30,7 @@ Default: Top 20 pages by clicks over last 28 days.`;
 
 export type TopPagesInput = z.infer<typeof topPagesInput>;
 
-export async function topPages(input: TopPagesInput, user?: string) {
+export async function topPages(input: TopPagesInput, log: RequestLogger) {
   const defaults = getDefaultDateRange();
   const startDate = input.start_date || defaults.startDate;
   const endDate = input.end_date || defaults.endDate;
@@ -57,6 +58,6 @@ export async function topPages(input: TopPagesInput, user?: string) {
     LIMIT ${input.limit}
   `;
 
-  const rows = await executeQuery({ sql, params }, { tool: "top_pages", user });
+  const rows = await executeQuery({ sql, params }, log);
   return { rows, rowCount: rows.length, dateRange: { startDate, endDate } };
 }

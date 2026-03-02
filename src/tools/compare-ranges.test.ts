@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "bun:test";
 import { loadConfig } from "@config";
-import { testEnv, mockExecuteQuery } from "@tools/test-helpers";
+import { testEnv, mockExecuteQuery, testLog } from "@tools/test-helpers";
 
 import { compareRanges } from "@tools/compare-ranges";
 
@@ -12,16 +12,19 @@ describe("compareRanges", () => {
   });
 
   it("returns expected structure", async () => {
-    const result = await compareRanges({
-      period1_start: "2025-01-01",
-      period1_end: "2025-01-31",
-      period2_start: "2025-02-01",
-      period2_end: "2025-02-28",
-      dimensions: [],
-      filters: [],
-      metric: "clicks",
-      row_limit: 50,
-    });
+    const result = await compareRanges(
+      {
+        period1_start: "2025-01-01",
+        period1_end: "2025-01-31",
+        period2_start: "2025-02-01",
+        period2_end: "2025-02-28",
+        dimensions: [],
+        filters: [],
+        metric: "clicks",
+        row_limit: 50,
+      },
+      testLog,
+    );
 
     expect(result).toHaveProperty("rows");
     expect(result).toHaveProperty("rowCount");
@@ -32,16 +35,19 @@ describe("compareRanges", () => {
   });
 
   it("SQL contains period1 and period2 CTEs", async () => {
-    await compareRanges({
-      period1_start: "2025-01-01",
-      period1_end: "2025-01-31",
-      period2_start: "2025-02-01",
-      period2_end: "2025-02-28",
-      dimensions: [],
-      filters: [],
-      metric: "clicks",
-      row_limit: 50,
-    });
+    await compareRanges(
+      {
+        period1_start: "2025-01-01",
+        period1_end: "2025-01-31",
+        period2_start: "2025-02-01",
+        period2_end: "2025-02-28",
+        dimensions: [],
+        filters: [],
+        metric: "clicks",
+        row_limit: 50,
+      },
+      testLog,
+    );
 
     const call = mockExecuteQuery.mock.calls[0];
     const { sql } = call[0] as { sql: string };
@@ -51,16 +57,19 @@ describe("compareRanges", () => {
   });
 
   it("passes period dates as params", async () => {
-    await compareRanges({
-      period1_start: "2025-01-01",
-      period1_end: "2025-01-31",
-      period2_start: "2025-02-01",
-      period2_end: "2025-02-28",
-      dimensions: [],
-      filters: [],
-      metric: "clicks",
-      row_limit: 50,
-    });
+    await compareRanges(
+      {
+        period1_start: "2025-01-01",
+        period1_end: "2025-01-31",
+        period2_start: "2025-02-01",
+        period2_end: "2025-02-28",
+        dimensions: [],
+        filters: [],
+        metric: "clicks",
+        row_limit: 50,
+      },
+      testLog,
+    );
 
     const call = mockExecuteQuery.mock.calls[0];
     const { params } = call[0] as { params: Record<string, unknown> };
@@ -71,16 +80,19 @@ describe("compareRanges", () => {
   });
 
   it("includes dimensions in SQL when provided", async () => {
-    await compareRanges({
-      period1_start: "2025-01-01",
-      period1_end: "2025-01-31",
-      period2_start: "2025-02-01",
-      period2_end: "2025-02-28",
-      dimensions: ["query"],
-      filters: [],
-      metric: "clicks",
-      row_limit: 50,
-    });
+    await compareRanges(
+      {
+        period1_start: "2025-01-01",
+        period1_end: "2025-01-31",
+        period2_start: "2025-02-01",
+        period2_end: "2025-02-28",
+        dimensions: ["query"],
+        filters: [],
+        metric: "clicks",
+        row_limit: 50,
+      },
+      testLog,
+    );
 
     const call = mockExecuteQuery.mock.calls[0];
     const { sql } = call[0] as { sql: string };
@@ -89,16 +101,19 @@ describe("compareRanges", () => {
   });
 
   it("includes filters in SQL when provided", async () => {
-    await compareRanges({
-      period1_start: "2025-01-01",
-      period1_end: "2025-01-31",
-      period2_start: "2025-02-01",
-      period2_end: "2025-02-28",
-      dimensions: [],
-      filters: [{ dimension: "query", operator: "contains", expression: "pricing" }],
-      metric: "clicks",
-      row_limit: 50,
-    });
+    await compareRanges(
+      {
+        period1_start: "2025-01-01",
+        period1_end: "2025-01-31",
+        period2_start: "2025-02-01",
+        period2_end: "2025-02-28",
+        dimensions: [],
+        filters: [{ dimension: "query", operator: "contains", expression: "pricing" }],
+        metric: "clicks",
+        row_limit: 50,
+      },
+      testLog,
+    );
 
     const call = mockExecuteQuery.mock.calls[0];
     const { sql, params } = call[0] as { sql: string; params: Record<string, unknown> };
@@ -107,16 +122,19 @@ describe("compareRanges", () => {
   });
 
   it("computes delta for the specified metric", async () => {
-    await compareRanges({
-      period1_start: "2025-01-01",
-      period1_end: "2025-01-31",
-      period2_start: "2025-02-01",
-      period2_end: "2025-02-28",
-      dimensions: [],
-      filters: [],
-      metric: "impressions",
-      row_limit: 50,
-    });
+    await compareRanges(
+      {
+        period1_start: "2025-01-01",
+        period1_end: "2025-01-31",
+        period2_start: "2025-02-01",
+        period2_end: "2025-02-28",
+        dimensions: [],
+        filters: [],
+        metric: "impressions",
+        row_limit: 50,
+      },
+      testLog,
+    );
 
     const call = mockExecuteQuery.mock.calls[0];
     const { sql } = call[0] as { sql: string };
@@ -126,16 +144,19 @@ describe("compareRanges", () => {
   });
 
   it("applies row_limit", async () => {
-    await compareRanges({
-      period1_start: "2025-01-01",
-      period1_end: "2025-01-31",
-      period2_start: "2025-02-01",
-      period2_end: "2025-02-28",
-      dimensions: [],
-      filters: [],
-      metric: "clicks",
-      row_limit: 25,
-    });
+    await compareRanges(
+      {
+        period1_start: "2025-01-01",
+        period1_end: "2025-01-31",
+        period2_start: "2025-02-01",
+        period2_end: "2025-02-28",
+        dimensions: [],
+        filters: [],
+        metric: "clicks",
+        row_limit: 25,
+      },
+      testLog,
+    );
 
     const call = mockExecuteQuery.mock.calls[0];
     const { sql } = call[0] as { sql: string };

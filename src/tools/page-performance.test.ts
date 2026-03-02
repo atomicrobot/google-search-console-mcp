@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "bun:test";
 import { loadConfig } from "@config";
-import { testEnv, mockExecuteQuery } from "@tools/test-helpers";
+import { testEnv, mockExecuteQuery, testLog } from "@tools/test-helpers";
 
 import { pagePerformance } from "@tools/page-performance";
 
@@ -12,10 +12,7 @@ describe("pagePerformance", () => {
   });
 
   it("returns expected structure", async () => {
-    const result = await pagePerformance({
-      url: "/pricing",
-      url_match_type: "contains",
-    });
+    const result = await pagePerformance({ url: "/pricing", url_match_type: "contains" }, testLog);
 
     expect(result).toHaveProperty("timeSeries");
     expect(result).toHaveProperty("summary");
@@ -26,19 +23,13 @@ describe("pagePerformance", () => {
   });
 
   it("executes two queries (timeSeries and summary)", async () => {
-    await pagePerformance({
-      url: "/pricing",
-      url_match_type: "contains",
-    });
+    await pagePerformance({ url: "/pricing", url_match_type: "contains" }, testLog);
 
     expect(mockExecuteQuery).toHaveBeenCalledTimes(2);
   });
 
   it("time series SQL groups by data_date and orders ASC", async () => {
-    await pagePerformance({
-      url: "/pricing",
-      url_match_type: "contains",
-    });
+    await pagePerformance({ url: "/pricing", url_match_type: "contains" }, testLog);
 
     const timeSeriesCall = mockExecuteQuery.mock.calls[0];
     const { sql } = timeSeriesCall[0] as { sql: string };
@@ -47,10 +38,7 @@ describe("pagePerformance", () => {
   });
 
   it("summary SQL includes aggregate stats", async () => {
-    await pagePerformance({
-      url: "/pricing",
-      url_match_type: "contains",
-    });
+    await pagePerformance({ url: "/pricing", url_match_type: "contains" }, testLog);
 
     const summaryCall = mockExecuteQuery.mock.calls[1];
     const { sql } = summaryCall[0] as { sql: string };
@@ -60,10 +48,10 @@ describe("pagePerformance", () => {
   });
 
   it("passes url_filter as param", async () => {
-    await pagePerformance({
-      url: "https://example.com/pricing",
-      url_match_type: "equals",
-    });
+    await pagePerformance(
+      { url: "https://example.com/pricing", url_match_type: "equals" },
+      testLog,
+    );
 
     const call = mockExecuteQuery.mock.calls[0];
     const { params } = call[0] as { params: Record<string, unknown> };
@@ -71,12 +59,15 @@ describe("pagePerformance", () => {
   });
 
   it("uses provided date range", async () => {
-    await pagePerformance({
-      url: "/blog",
-      url_match_type: "contains",
-      start_date: "2025-01-01",
-      end_date: "2025-03-31",
-    });
+    await pagePerformance(
+      {
+        url: "/blog",
+        url_match_type: "contains",
+        start_date: "2025-01-01",
+        end_date: "2025-03-31",
+      },
+      testLog,
+    );
 
     const call = mockExecuteQuery.mock.calls[0];
     const { params } = call[0] as { params: Record<string, unknown> };
@@ -85,10 +76,7 @@ describe("pagePerformance", () => {
   });
 
   it("applies extended default date range when dates not specified", async () => {
-    await pagePerformance({
-      url: "/pricing",
-      url_match_type: "contains",
-    });
+    await pagePerformance({ url: "/pricing", url_match_type: "contains" }, testLog);
 
     const call = mockExecuteQuery.mock.calls[0];
     const { params } = call[0] as { params: Record<string, unknown> };
@@ -99,10 +87,7 @@ describe("pagePerformance", () => {
   it("returns summary as null when no summary rows", async () => {
     mockExecuteQuery.mockResolvedValue([]);
 
-    const result = await pagePerformance({
-      url: "/pricing",
-      url_match_type: "contains",
-    });
+    const result = await pagePerformance({ url: "/pricing", url_match_type: "contains" }, testLog);
 
     expect(result.summary).toBeNull();
   });
@@ -116,10 +101,7 @@ describe("pagePerformance", () => {
 
     mockExecuteQuery.mockResolvedValueOnce(mockTimeSeries).mockResolvedValueOnce(mockSummary);
 
-    const result = await pagePerformance({
-      url: "/pricing",
-      url_match_type: "contains",
-    });
+    const result = await pagePerformance({ url: "/pricing", url_match_type: "contains" }, testLog);
 
     expect(result.timeSeries).toEqual(mockTimeSeries);
     expect(result.daysWithData).toBe(2);

@@ -1,6 +1,13 @@
 import { expect } from "bun:test";
 import { loadConfig } from "@config";
 import { _resetClient, executeQuery, getTableRef } from "@lib/bigquery";
+import { createRequestLogger } from "@lib/logger";
+
+/** Request logger for integration test log attribution. */
+export const integrationTestLog = createRequestLogger({
+  tool: "integration_test",
+  email: "integration-test",
+});
 
 /**
  * Set up real BigQuery connection for integration tests.
@@ -39,7 +46,7 @@ export async function fetchSampleUrl(): Promise<string | null> {
   `;
   const rows = await executeQuery(
     { sql, params: { recent_date: daysAgo(14) } },
-    { tool: "integration_test", user: "integration-test" },
+    integrationTestLog,
   );
   return rows.length > 0 ? (rows[0].url as string) : null;
 }

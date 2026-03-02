@@ -1,5 +1,5 @@
 import { describe, it, beforeAll, expect } from "bun:test";
-import { setupIntegration } from "@tools/integration-test-helpers";
+import { setupIntegration, integrationTestLog } from "@tools/integration-test-helpers";
 import { trendingQueries } from "@tools/trending-queries";
 
 describe("trendingQueries (integration)", () => {
@@ -8,14 +8,17 @@ describe("trendingQueries (integration)", () => {
   });
 
   it("direction=both returns rising and falling arrays with correct deltas", async () => {
-    const result = await trendingQueries({
-      comparison: "wow",
-      metric: "clicks",
-      direction: "both",
-      min_impressions: 10,
-      limit: 10,
-      url_match_type: "contains",
-    });
+    const result = await trendingQueries(
+      {
+        comparison: "wow",
+        metric: "clicks",
+        direction: "both",
+        min_impressions: 10,
+        limit: 10,
+        url_match_type: "contains",
+      },
+      integrationTestLog,
+    );
 
     expect(result).toHaveProperty("rising");
     expect(result).toHaveProperty("falling");
@@ -39,14 +42,17 @@ describe("trendingQueries (integration)", () => {
   }, 15_000);
 
   it("direction=rising returns only rows with positive delta", async () => {
-    const result = await trendingQueries({
-      comparison: "wow",
-      metric: "clicks",
-      direction: "rising",
-      min_impressions: 10,
-      limit: 5,
-      url_match_type: "contains",
-    });
+    const result = await trendingQueries(
+      {
+        comparison: "wow",
+        metric: "clicks",
+        direction: "rising",
+        min_impressions: 10,
+        limit: 5,
+        url_match_type: "contains",
+      },
+      integrationTestLog,
+    );
 
     expect(result).toHaveProperty("rows");
     expect(result).toHaveProperty("rowCount");
@@ -58,14 +64,17 @@ describe("trendingQueries (integration)", () => {
   }, 15_000);
 
   it("periods object has current and previous date ranges", async () => {
-    const result = await trendingQueries({
-      comparison: "wow",
-      metric: "clicks",
-      direction: "both",
-      min_impressions: 10,
-      limit: 1,
-      url_match_type: "contains",
-    });
+    const result = await trendingQueries(
+      {
+        comparison: "wow",
+        metric: "clicks",
+        direction: "both",
+        min_impressions: 10,
+        limit: 1,
+        url_match_type: "contains",
+      },
+      integrationTestLog,
+    );
 
     expect(result.periods).toHaveProperty("current");
     expect(result.periods).toHaveProperty("previous");

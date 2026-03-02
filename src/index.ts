@@ -1,6 +1,6 @@
 import express from "express";
 import { loadConfig } from "@config";
-import { logger } from "@lib/logger";
+import { logger, createRequestLogger } from "@lib/logger";
 import { authMiddleware } from "@auth/middleware";
 import { oauthRouter } from "@auth/oauth-routes";
 import { createMcpServer } from "./server";
@@ -16,10 +16,12 @@ app.use(express.urlencoded({ extended: true }));
 
 // Request logging
 app.use((req, _res, next) => {
-  logger.info("Incoming request", {
+  req.log = createRequestLogger({
+    requestId: crypto.randomUUID(),
     method: req.method,
     path: req.path,
   });
+  req.log.info("Incoming request");
   next();
 });
 

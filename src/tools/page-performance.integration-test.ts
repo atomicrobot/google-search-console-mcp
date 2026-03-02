@@ -4,6 +4,7 @@ import {
   getLastNDays,
   fetchSampleUrl,
   expectMetricColumns,
+  integrationTestLog,
 } from "@tools/integration-test-helpers";
 import { pagePerformance } from "@tools/page-performance";
 
@@ -23,11 +24,10 @@ describe("pagePerformance (integration)", () => {
       return;
     }
 
-    const result = await pagePerformance({
-      url: sampleUrl,
-      url_match_type: "equals",
-      ...dates,
-    });
+    const result = await pagePerformance(
+      { url: sampleUrl, url_match_type: "equals", ...dates },
+      integrationTestLog,
+    );
 
     // timeSeries
     expect(Array.isArray(result.timeSeries)).toBe(true);

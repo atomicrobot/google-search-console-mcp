@@ -1,6 +1,6 @@
 import { BigQuery } from "@google-cloud/bigquery";
 import { getConfig, getFullTableId } from "@config";
-import { logger } from "@lib/logger";
+import type { RequestLogger } from "@lib/logger";
 
 let _client: BigQuery | null = null;
 
@@ -18,17 +18,15 @@ export interface QueryOptions {
 
 export async function executeQuery(
   options: QueryOptions,
-  context?: { tool?: string; user?: string },
+  log: RequestLogger,
 ): Promise<Record<string, unknown>[]> {
   const config = getConfig();
   const client = getBigQueryClient();
 
-  logger.info("Executing BigQuery query", {
-    tool: context?.tool,
-    user: context?.user,
+  log.info("Executing BigQuery query", {
     paramKeys: Object.keys(options.params),
   });
-  logger.debug("Query SQL", { sql: options.sql, params: options.params });
+  log.debug("Query SQL", { sql: options.sql, params: options.params });
 
   const start = Date.now();
   const result = await client.query({
@@ -39,9 +37,7 @@ export async function executeQuery(
   });
   const rows = result[0] as Record<string, unknown>[];
 
-  logger.info("BigQuery query complete", {
-    tool: context?.tool,
-    user: context?.user,
+  log.info("BigQuery query complete", {
     rowCount: rows.length,
     durationMs: Date.now() - start,
   });

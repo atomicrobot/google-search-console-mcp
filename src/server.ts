@@ -1,6 +1,6 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
-import { logger } from "@lib/logger";
+import { logger, createRequestLogger } from "@lib/logger";
 import { getConfig } from "@config";
 
 import { listSchemaInput, listSchema, LIST_SCHEMA_DESCRIPTION } from "@tools/list-schema";
@@ -36,9 +36,9 @@ function jsonResult(data: unknown): CallToolResult {
   return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
 }
 
-function errorResult(toolName: string, err: unknown): CallToolResult {
-  logger.error(`${toolName} error`, { error: err });
-  return { content: [{ type: "text", text: `Error: ${(err as Error).message}` }], isError: true };
+function toolLogger(toolName: string, extra: { authInfo?: { extra?: Record<string, unknown> } }) {
+  const authExtra = extra.authInfo?.extra ?? {};
+  return createRequestLogger({ tool: toolName, ...authExtra });
 }
 
 const TOOL_NAMES = [
@@ -76,17 +76,33 @@ export function createMcpServer(): McpServer {
   server.registerTool(
     "list_dimensions_metrics",
     { description: LIST_SCHEMA_DESCRIPTION, inputSchema: listSchemaInput.shape },
-    () => jsonResult(listSchema()),
+    (extra) => {
+      const log = toolLogger("list_dimensions_metrics", extra);
+      try {
+        return jsonResult(listSchema(log));
+      } catch (err) {
+        log.error("Tool error", { error: err });
+        return {
+          content: [{ type: "text", text: `Error: ${(err as Error).message}` }],
+          isError: true,
+        };
+      }
+    },
   );
 
   server.registerTool(
     "search_performance",
     { description: SEARCH_PERFORMANCE_DESCRIPTION, inputSchema: searchPerformanceInput.shape },
     async (params, extra) => {
+      const log = toolLogger("search_performance", extra);
       try {
-        return jsonResult(await searchPerformance(params, extra.authInfo?.extra?.email as string));
+        return jsonResult(await searchPerformance(params, log));
       } catch (err) {
-        return errorResult("search_performance", err);
+        log.error("Tool error", { error: err });
+        return {
+          content: [{ type: "text", text: `Error: ${(err as Error).message}` }],
+          isError: true,
+        };
       }
     },
   );
@@ -95,10 +111,15 @@ export function createMcpServer(): McpServer {
     "top_pages",
     { description: TOP_PAGES_DESCRIPTION, inputSchema: topPagesInput.shape },
     async (params, extra) => {
+      const log = toolLogger("top_pages", extra);
       try {
-        return jsonResult(await topPages(params, extra.authInfo?.extra?.email as string));
+        return jsonResult(await topPages(params, log));
       } catch (err) {
-        return errorResult("top_pages", err);
+        log.error("Tool error", { error: err });
+        return {
+          content: [{ type: "text", text: `Error: ${(err as Error).message}` }],
+          isError: true,
+        };
       }
     },
   );
@@ -107,10 +128,15 @@ export function createMcpServer(): McpServer {
     "top_queries",
     { description: TOP_QUERIES_DESCRIPTION, inputSchema: topQueriesInput.shape },
     async (params, extra) => {
+      const log = toolLogger("top_queries", extra);
       try {
-        return jsonResult(await topQueries(params, extra.authInfo?.extra?.email as string));
+        return jsonResult(await topQueries(params, log));
       } catch (err) {
-        return errorResult("top_queries", err);
+        log.error("Tool error", { error: err });
+        return {
+          content: [{ type: "text", text: `Error: ${(err as Error).message}` }],
+          isError: true,
+        };
       }
     },
   );
@@ -119,10 +145,15 @@ export function createMcpServer(): McpServer {
     "compare_date_ranges",
     { description: COMPARE_RANGES_DESCRIPTION, inputSchema: compareRangesInput.shape },
     async (params, extra) => {
+      const log = toolLogger("compare_date_ranges", extra);
       try {
-        return jsonResult(await compareRanges(params, extra.authInfo?.extra?.email as string));
+        return jsonResult(await compareRanges(params, log));
       } catch (err) {
-        return errorResult("compare_date_ranges", err);
+        log.error("Tool error", { error: err });
+        return {
+          content: [{ type: "text", text: `Error: ${(err as Error).message}` }],
+          isError: true,
+        };
       }
     },
   );
@@ -131,10 +162,15 @@ export function createMcpServer(): McpServer {
     "page_performance",
     { description: PAGE_PERFORMANCE_DESCRIPTION, inputSchema: pagePerformanceInput.shape },
     async (params, extra) => {
+      const log = toolLogger("page_performance", extra);
       try {
-        return jsonResult(await pagePerformance(params, extra.authInfo?.extra?.email as string));
+        return jsonResult(await pagePerformance(params, log));
       } catch (err) {
-        return errorResult("page_performance", err);
+        log.error("Tool error", { error: err });
+        return {
+          content: [{ type: "text", text: `Error: ${(err as Error).message}` }],
+          isError: true,
+        };
       }
     },
   );
@@ -143,10 +179,15 @@ export function createMcpServer(): McpServer {
     "trending_queries",
     { description: TRENDING_QUERIES_DESCRIPTION, inputSchema: trendingQueriesInput.shape },
     async (params, extra) => {
+      const log = toolLogger("trending_queries", extra);
       try {
-        return jsonResult(await trendingQueries(params, extra.authInfo?.extra?.email as string));
+        return jsonResult(await trendingQueries(params, log));
       } catch (err) {
-        return errorResult("trending_queries", err);
+        log.error("Tool error", { error: err });
+        return {
+          content: [{ type: "text", text: `Error: ${(err as Error).message}` }],
+          isError: true,
+        };
       }
     },
   );
@@ -155,10 +196,15 @@ export function createMcpServer(): McpServer {
     "cannibalization_check",
     { description: CANNIBALIZATION_DESCRIPTION, inputSchema: cannibalizationInput.shape },
     async (params, extra) => {
+      const log = toolLogger("cannibalization_check", extra);
       try {
-        return jsonResult(await cannibalization(params, extra.authInfo?.extra?.email as string));
+        return jsonResult(await cannibalization(params, log));
       } catch (err) {
-        return errorResult("cannibalization_check", err);
+        log.error("Tool error", { error: err });
+        return {
+          content: [{ type: "text", text: `Error: ${(err as Error).message}` }],
+          isError: true,
+        };
       }
     },
   );

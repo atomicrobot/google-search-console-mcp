@@ -3,6 +3,7 @@ import type { Request, Response, NextFunction } from "express";
 import { authMiddleware } from "@auth/middleware";
 import { loadConfig } from "@config";
 import { mintToken } from "@auth/jwt";
+import { createRequestLogger } from "@lib/logger";
 
 const testEnv = {
   GCP_PROJECT_ID: "test-project",
@@ -17,6 +18,7 @@ function mockReqRes(authHeader?: string) {
   const req = {
     headers: { authorization: authHeader },
     path: "/mcp",
+    log: createRequestLogger({ requestId: "test-request-id" }),
   } as unknown as Request;
   const res = {
     status: mock(() => res),
@@ -38,6 +40,27 @@ describe("authMiddleware", () => {
     authMiddleware(req, res, next);
     expect(next).toHaveBeenCalled();
     expect(req.user?.email).toBe("user@example.com");
+  });
+
+  it("accumulates email onto req.log metadata", () => {
+    const token = mintToken("user@example.com", "example.com");
+    const { req, res, next } = mockReqRes(`Bearer ${token}`);
+    authMiddleware(req, res, next);
+    expect(req.log?.metadata.email).toBe("user@example.com");
+    expect(req.log?.metadata.domain).toBe("example.com");
+    expect(req.log?.metadata.requestId).toBe("test-request-id");
+  });
+
+  it("sets req.auth with extra metadata for MCP transport", () => {
+    const token = mintToken("user@example.com", "example.com");
+    const { req, res, next } = mockReqRes(`Bearer ${token}`);
+    authMiddleware(req, res, next);
+    expect(req.auth).toBeDefined();
+    expect(req.auth?.token).toBe("[redacted]");
+    expect(req.auth?.clientId).toBe("example.com");
+    expect(req.auth?.scopes).toEqual([]);
+    expect(req.auth?.extra?.email).toBe("user@example.com");
+    expect(req.auth?.extra?.requestId).toBe("test-request-id");
   });
 
   it("rejects missing auth header", () => {

@@ -1,5 +1,9 @@
 import { describe, it, beforeAll, expect } from "bun:test";
-import { setupIntegration, getLastNDays } from "@tools/integration-test-helpers";
+import {
+  setupIntegration,
+  getLastNDays,
+  integrationTestLog,
+} from "@tools/integration-test-helpers";
 import { cannibalization } from "@tools/cannibalization";
 
 describe("cannibalization (integration)", () => {
@@ -10,14 +14,17 @@ describe("cannibalization (integration)", () => {
   const dates = getLastNDays(28);
 
   it("returns grouped queries with pages", async () => {
-    const result = await cannibalization({
-      ...dates,
-      min_pages: 2,
-      min_impressions: 10,
-      limit: 5,
-      query_match_type: "contains",
-      url_match_type: "contains",
-    });
+    const result = await cannibalization(
+      {
+        ...dates,
+        min_pages: 2,
+        min_impressions: 10,
+        limit: 5,
+        query_match_type: "contains",
+        url_match_type: "contains",
+      },
+      integrationTestLog,
+    );
 
     expect(Array.isArray(result.queries)).toBe(true);
     expect(result.queryCount).toBe(result.queries.length);
@@ -37,14 +44,17 @@ describe("cannibalization (integration)", () => {
 
   it("pageCount is at least min_pages", async () => {
     const minPages = 3;
-    const result = await cannibalization({
-      ...dates,
-      min_pages: minPages,
-      min_impressions: 10,
-      limit: 10,
-      query_match_type: "contains",
-      url_match_type: "contains",
-    });
+    const result = await cannibalization(
+      {
+        ...dates,
+        min_pages: minPages,
+        min_impressions: 10,
+        limit: 10,
+        query_match_type: "contains",
+        url_match_type: "contains",
+      },
+      integrationTestLog,
+    );
 
     for (const entry of result.queries) {
       expect(entry.pageCount).toBeGreaterThanOrEqual(minPages);

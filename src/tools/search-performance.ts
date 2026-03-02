@@ -9,6 +9,7 @@ import {
   type FilterSpec,
 } from "@lib/bigquery";
 import { getDefaultDateRange } from "@lib/date-utils";
+import type { RequestLogger } from "@lib/logger";
 
 export const searchPerformanceInput = z.object({
   start_date: z
@@ -50,7 +51,7 @@ Default date range: last 28 days. Data is delayed ~3 days from Google.`;
 
 export type SearchPerformanceInput = z.infer<typeof searchPerformanceInput>;
 
-export async function searchPerformance(input: SearchPerformanceInput, user?: string) {
+export async function searchPerformance(input: SearchPerformanceInput, log: RequestLogger) {
   const defaults = getDefaultDateRange();
   const startDate = input.start_date || defaults.startDate;
   const endDate = input.end_date || defaults.endDate;
@@ -83,6 +84,6 @@ export async function searchPerformance(input: SearchPerformanceInput, user?: st
     LIMIT ${input.row_limit}
   `;
 
-  const rows = await executeQuery({ sql, params }, { tool: "search_performance", user });
+  const rows = await executeQuery({ sql, params }, log);
   return { rows, rowCount: rows.length, dateRange: { startDate, endDate } };
 }
