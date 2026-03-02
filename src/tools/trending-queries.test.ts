@@ -78,7 +78,7 @@ describe("trendingQueries", () => {
     expect(params.min_impressions).toBe(50);
   });
 
-  it("applies HAVING delta > 0 for rising direction", async () => {
+  it("applies WHERE delta > 0 for rising direction", async () => {
     await trendingQueries({
       comparison: "wow",
       metric: "clicks",
@@ -90,10 +90,10 @@ describe("trendingQueries", () => {
 
     const call = mockExecuteQuery.mock.calls[0];
     const { sql } = call[0] as { sql: string };
-    expect(sql).toEqual(expect.stringContaining("HAVING delta > 0"));
+    expect(sql).toEqual(expect.stringContaining("WHERE delta > 0"));
   });
 
-  it("applies HAVING delta < 0 for falling direction", async () => {
+  it("applies WHERE delta < 0 for falling direction", async () => {
     await trendingQueries({
       comparison: "wow",
       metric: "clicks",
@@ -105,7 +105,7 @@ describe("trendingQueries", () => {
 
     const call = mockExecuteQuery.mock.calls[0];
     const { sql } = call[0] as { sql: string };
-    expect(sql).toEqual(expect.stringContaining("HAVING delta < 0"));
+    expect(sql).toEqual(expect.stringContaining("WHERE delta < 0"));
   });
 
   it("includes url_filter when provided", async () => {

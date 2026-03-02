@@ -43,9 +43,9 @@ export async function trendingQueries(input: TrendingQueriesInput, user?: string
 
   const directionFilter =
     input.direction === "rising"
-      ? "HAVING delta > 0"
+      ? "WHERE delta > 0"
       : input.direction === "falling"
-        ? "HAVING delta < 0"
+        ? "WHERE delta < 0"
         : "";
 
   const sql = `
@@ -54,7 +54,7 @@ export async function trendingQueries(input: TrendingQueriesInput, user?: string
       FROM \`${getTableRef()}\`
       WHERE data_date BETWEEN @curr_start AND @curr_end ${urlClause}
       GROUP BY query
-      HAVING SUM(impressions) >= @min_impressions
+      HAVING impressions >= @min_impressions
     ),
     previous_period AS (
       SELECT query, ${ALL_METRICS_SQL}
@@ -71,9 +71,9 @@ export async function trendingQueries(input: TrendingQueriesInput, user?: string
         SAFE_DIVIDE(IFNULL(c.${input.metric}, 0) - IFNULL(p.${input.metric}, 0), NULLIF(p.${input.metric}, 0)) AS delta_pct
       FROM current_period c
       FULL OUTER JOIN previous_period p ON c.query = p.query
-      ${directionFilter}
     )
     SELECT * FROM combined
+    ${directionFilter}
     ORDER BY ABS(delta) DESC
     LIMIT ${input.limit}
   `;
