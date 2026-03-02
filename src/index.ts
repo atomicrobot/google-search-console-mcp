@@ -1,6 +1,7 @@
 import express from "express";
 import { loadConfig } from "@config";
 import { logger, createRequestLogger } from "@lib/logger";
+import { parseTraceContext } from "@lib/trace";
 import { authMiddleware } from "@auth/middleware";
 import { oauthRouter } from "@auth/oauth-routes";
 import { createMcpServer } from "./server";
@@ -16,8 +17,11 @@ app.use(express.urlencoded({ extended: true }));
 
 // Request logging
 app.use((req, _res, next) => {
+  const traceContext = parseTraceContext(
+    req.headers["x-cloud-trace-context"] as string | undefined,
+  );
   req.log = createRequestLogger({
-    requestId: crypto.randomUUID(),
+    ...traceContext,
     method: req.method,
     path: req.path,
   });
