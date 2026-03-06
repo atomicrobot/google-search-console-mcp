@@ -62,6 +62,7 @@ bun run format:check     # Prettier check
 | `ALLOWED_DOMAIN` | Yes | — |
 | `SERVER_URL` | Yes | — |
 | `JWT_SECRET` | Yes | — |
+| `FIRESTORE_OAUTH_DATABASE` | Yes | — |
 | `TOKEN_TTL_SECONDS` | No | `3600` |
 | `PORT` | No | `8080` |
 | `DATA_AVAILABLE_FROM` | No | — |

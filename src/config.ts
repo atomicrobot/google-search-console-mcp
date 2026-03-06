@@ -11,6 +11,7 @@ const envSchema = z.object({
   SERVER_URL: z.string().url(),
   JWT_SECRET: z.string().min(16),
   TOKEN_TTL_SECONDS: z.coerce.number().int().positive().default(3600),
+  FIRESTORE_OAUTH_DATABASE: z.string().min(1),
   PORT: z.coerce.number().int().positive().default(8080),
   DATA_AVAILABLE_FROM: z
     .string()

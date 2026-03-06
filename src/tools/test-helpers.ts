@@ -18,4 +18,5 @@ export const testEnv = {
   ALLOWED_DOMAIN: "example.com",
   SERVER_URL: "http://localhost:8080",
   JWT_SECRET: "a-very-long-secret-key-for-testing",
+  FIRESTORE_OAUTH_DATABASE: "oauth",
 };

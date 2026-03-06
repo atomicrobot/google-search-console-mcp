@@ -10,6 +10,7 @@ const testEnv = {
   SERVER_URL: "http://localhost:8080",
   JWT_SECRET: "a-very-long-secret-key-for-testing",
   TOKEN_TTL_SECONDS: "60",
+  FIRESTORE_OAUTH_DATABASE: "oauth",
 };
 
 describe("jwt", () => {

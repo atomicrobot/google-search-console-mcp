@@ -51,5 +51,5 @@ gcloud run deploy "$SERVICE_NAME" \
   --max-instances 1 \
   --timeout 3600 \
   --session-affinity \
-  --set-env-vars "GCP_PROJECT_ID=${PROJECT_ID},BQ_DATASET=${BQ_DATASET:-searchconsole},BQ_TABLE=${BQ_TABLE:-searchdata_url_impression},ALLOWED_DOMAIN=${ALLOWED_DOMAIN},GOOGLE_OAUTH_CLIENT_ID=${GOOGLE_OAUTH_CLIENT_ID},SERVER_URL=${SERVER_URL}" \
+  --set-env-vars "GCP_PROJECT_ID=${PROJECT_ID},BQ_DATASET=${BQ_DATASET:-searchconsole},BQ_TABLE=${BQ_TABLE:-searchdata_url_impression},ALLOWED_DOMAIN=${ALLOWED_DOMAIN},GOOGLE_OAUTH_CLIENT_ID=${GOOGLE_OAUTH_CLIENT_ID},SERVER_URL=${SERVER_URL},FIRESTORE_OAUTH_DATABASE=${FIRESTORE_OAUTH_DATABASE}" \
   --set-secrets "GOOGLE_OAUTH_CLIENT_SECRET=gsc-mcp-oauth-secret:latest,JWT_SECRET=gsc-mcp-jwt-secret:latest"

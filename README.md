@@ -14,25 +14,23 @@ MCP Client (Claude Code / Claude.ai / Custom)
   ├── OAuth 2.0 (Google as IdP, Workspace domain restriction)
   │
   ▼
-MCP Server (Node.js + TypeScript, Cloud Run)
+MCP Server (Bun + TypeScript, Cloud Run)
   │
   ├── Streamable HTTP transport (/mcp)
-  ├── SSE transport (/sse)
   │
-  ▼
-Google BigQuery API
+  ├──► Google BigQuery API → GSC BigQuery Dataset
   │
-  ▼
-GSC BigQuery Dataset
+  └──► Cloud Firestore (oauth database) → Refresh token storage
 ```
 
 ---
 
 ## Tech Stack
 
-- **Language:** TypeScript (Node.js)
+- **Language:** TypeScript (Bun)
 - **MCP SDK:** `@modelcontextprotocol/sdk`
 - **BigQuery client:** `@google-cloud/bigquery`
+- **Firestore client:** `@google-cloud/firestore`
 - **Runtime:** Cloud Run
 - **Auth:** OAuth 2.0 with Google as identity provider
 
@@ -43,8 +41,8 @@ GSC BigQuery Dataset
 | Variable | Description | Required | Default |
 |---|---|---|---|
 | `GCP_PROJECT_ID` | GCP project containing the BigQuery dataset | Yes | — |
-| `BQ_DATASET` | BigQuery dataset name (e.g. `searchconsole`) | Yes | — |
-| `BQ_TABLE` | GSC table name (e.g. `searchdata_url_impression`) | Yes | — |
+| `BQ_DATASET` | BigQuery dataset name | No | `searchconsole` |
+| `BQ_TABLE` | GSC table name | No | `searchdata_url_impression` |
 | `MAX_BYTES_BILLED` | BigQuery cost cap per query in bytes | No | `1000000000` (1 GB) |
 | `GOOGLE_OAUTH_CLIENT_ID` | OAuth 2.0 client ID (web application type) | Yes | — |
 | `GOOGLE_OAUTH_CLIENT_SECRET` | OAuth 2.0 client secret | Yes | — |
@@ -52,6 +50,8 @@ GSC BigQuery Dataset
 | `SERVER_URL` | Public URL of the Cloud Run service (for OAuth redirect) | Yes | — |
 | `JWT_SECRET` | Secret for signing access token JWTs (store in Secret Manager) | Yes | — |
 | `TOKEN_TTL_SECONDS` | Access token expiry in seconds | No | `3600` (1 hour) |
+| `FIRESTORE_OAUTH_DATABASE` | Firestore database ID for refresh token storage | Yes | — |
+| `DATA_AVAILABLE_FROM` | Earliest date data is available (YYYY-MM-DD) | No | — |
 | `PORT` | Server listening port | No | `8080` |
 
 All queries use the fully-qualified table `{GCP_PROJECT_ID}.{BQ_DATASET}.{BQ_TABLE}`.
@@ -72,15 +72,18 @@ The server implements the MCP OAuth specification (based on RFC 8414), delegatin
    - A `state` param encoding the client's original redirect URI and a CSRF token.
 3. **Callback:** Google redirects to `GET /oauth/callback` with an authorization code. The server exchanges the code for a Google ID token.
 4. **Domain validation:** The server verifies the `hd` (hosted domain) claim on the Google ID token matches `ALLOWED_DOMAIN`. If it doesn't, reject with 403.
-5. **Token minting:** The server mints a signed JWT containing the user's email, domain, and expiry, and redirects the client back with the token.
+5. **Token minting:** The server mints a signed JWT (access token) and a refresh token, then redirects the client back with both tokens. The refresh token is stored in Firestore.
 6. **Authenticated requests:** All MCP tool calls include the JWT. The server validates the signature and expiry on every request via middleware.
+7. **Token refresh:** When the access token expires, the client uses the refresh token to obtain a new access token without re-authenticating. The server rotates the refresh token on each use (deletes the old one, issues a new one).
 
 ### Token design
 
-Stateless JWTs — no server-side token storage. The server mints a signed JWT containing the user's email, domain, and expiry. On each request, the auth middleware validates the JWT signature and expiry. No in-memory state, no cold-start issues.
+Access tokens are stateless JWTs. The server mints a signed JWT containing the user's email, domain, and expiry. On each request, the auth middleware validates the JWT signature and expiry.
 
-- Token TTL: 1 hour (configurable via `TOKEN_TTL_SECONDS` env var)
+- Access token TTL: 1 hour (configurable via `TOKEN_TTL_SECONDS` env var)
 - JWT signing key: randomly generated secret stored in Secret Manager (`gsc-mcp-jwt-secret`)
+- Refresh tokens are stored in Cloud Firestore with a 30-day TTL (auto-deleted by Firestore TTL policy)
+- Refresh token rotation: on each refresh, the old token is deleted and a new one is issued
 
 ### Endpoints
 
@@ -89,21 +92,15 @@ Stateless JWTs — no server-side token storage. The server mints a signed JWT c
 | `/.well-known/oauth-authorization-server` | GET | OAuth metadata discovery |
 | `/authorize` | GET | Start OAuth flow → redirect to Google |
 | `/oauth/callback` | GET | Google redirects here → validate → mint token → redirect to client |
-| `/token` | POST | Token exchange (authorization_code grant) |
+| `/token` | POST | Token exchange (authorization_code and refresh_token grants) |
 | `/mcp` | POST | Streamable HTTP MCP transport (authenticated) |
-| `/sse` | GET | SSE MCP transport (authenticated) |
 | `/health` | GET | Health check (unauthenticated, for Cloud Run) |
 
 ---
 
 ## Transport
 
-The server supports **dual transport**:
-
-1. **Streamable HTTP** (`POST /mcp`) — Recommended for Claude Code and custom clients. Each request is a self-contained MCP JSON-RPC message. Simpler, no long-lived connections.
-2. **SSE** (`GET /sse`) — For clients that only support SSE. Note: set Cloud Run request timeout to 3600s and use `--session-affinity` to handle long-lived SSE connections.
-
-Both transports share the same auth middleware and tool implementation.
+The server uses **Streamable HTTP** (`POST /mcp`) as its only transport. Each request is a self-contained MCP JSON-RPC message. Simpler than SSE, no long-lived connections required. Compatible with Claude Code, Claude.ai, and custom MCP clients.
 
 ---
 
@@ -321,8 +318,7 @@ gsc-mcp-server/
 │   │   └── jwt.ts                # JWT minting and verification (stateless, no server-side storage)
 │   │
 │   ├── transport/
-│   │   ├── streamable-http.ts    # Streamable HTTP transport setup
-│   │   └── sse.ts                # SSE transport setup
+│   │   └── streamable-http.ts    # Streamable HTTP transport setup
 │   │
 │   ├── tools/
 │   │   ├── search-performance.ts # search_performance tool
@@ -335,8 +331,15 @@ gsc-mcp-server/
 │   │   └── cannibalization.ts    # cannibalization_check tool
 │   │
 │   └── lib/
-│       ├── bigquery.ts           # BigQuery client wrapper, query builder, shared query logic
-│       └── date-utils.ts         # Date range defaults, wow/mom period calculations
+│       ├── bigquery.ts           # Barrel re-export for BigQuery modules
+│       ├── bigquery-client.ts    # BigQuery client singleton and query execution (I/O)
+│       ├── bigquery-utils.ts     # Pure BigQuery query helpers (filters, metrics SQL)
+│       ├── firestore.ts          # Barrel re-export for Firestore modules
+│       ├── firestore-client.ts   # Firestore client singleton (I/O)
+│       ├── firestore-utils.ts    # Refresh token save/consume logic
+│       ├── logger.ts             # Winston logger setup and request logger factory
+│       ├── trace.ts              # Cloud trace context parsing
+│       └── date-utils.ts         # Date range defaults and period calculations
 │
 ├── Dockerfile
 ├── docker-compose.yml            # Local development with env vars
@@ -354,10 +357,9 @@ gsc-mcp-server/
 
 ### Dockerfile
 
-- Base: `node:20-slim`
-- Multi-stage build: build TypeScript in a builder stage, copy `dist/` to production stage
+- Base: `oven/bun:1`
 - Non-root user
-- `CMD ["node", "dist/index.js"]`
+- `CMD ["bun", "src/index.ts"]`
 
 ### Cloud Run deploy script (`deploy.sh`)
 
@@ -365,22 +367,30 @@ gsc-mcp-server/
 #!/bin/bash
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Load deploy env vars from .env.production if it exists
+if [ -f "$SCRIPT_DIR/.env.production" ]; then
+  set -a
+  source "$SCRIPT_DIR/.env.production"
+  set +a
+fi
+
 PROJECT_ID="${GCP_PROJECT_ID:?Set GCP_PROJECT_ID}"
-REGION="us-east1"
+REGION="${REGION:-us-east1}"
 SERVICE_NAME="gsc-mcp"
 SERVICE_ACCOUNT="gsc-mcp-sa@${PROJECT_ID}.iam.gserviceaccount.com"
 
-# Build and deploy
 gcloud run deploy "$SERVICE_NAME" \
   --source . \
   --region "$REGION" \
   --service-account "$SERVICE_ACCOUNT" \
-  --no-allow-unauthenticated \
+  --allow-unauthenticated \
   --min-instances 0 \
-  --max-instances 5 \
+  --max-instances 1 \
   --timeout 3600 \
   --session-affinity \
-  --set-env-vars "GCP_PROJECT_ID=${PROJECT_ID},BQ_DATASET=${BQ_DATASET},ALLOWED_DOMAIN=${ALLOWED_DOMAIN},GOOGLE_OAUTH_CLIENT_ID=${GOOGLE_OAUTH_CLIENT_ID}" \
+  --set-env-vars "GCP_PROJECT_ID=${PROJECT_ID},BQ_DATASET=${BQ_DATASET:-searchconsole},BQ_TABLE=${BQ_TABLE:-searchdata_url_impression},ALLOWED_DOMAIN=${ALLOWED_DOMAIN},GOOGLE_OAUTH_CLIENT_ID=${GOOGLE_OAUTH_CLIENT_ID},SERVER_URL=${SERVER_URL},FIRESTORE_OAUTH_DATABASE=${FIRESTORE_OAUTH_DATABASE}" \
   --set-secrets "GOOGLE_OAUTH_CLIENT_SECRET=gsc-mcp-oauth-secret:latest,JWT_SECRET=gsc-mcp-jwt-secret:latest"
 ```
 
@@ -388,6 +398,24 @@ gcloud run deploy "$SERVICE_NAME" \
 
 - `roles/bigquery.dataViewer` (on the dataset)
 - `roles/bigquery.jobUser` (on the project)
+- `roles/datastore.user` (for Firestore refresh token storage)
+
+### Firestore setup (one-time)
+
+Create the Firestore database for refresh token storage:
+
+```bash
+gcloud firestore databases create --database=oauth --location=us-east1 --type=firestore-native
+```
+
+Enable the TTL policy for automatic refresh token expiration:
+
+```bash
+gcloud firestore fields ttls update expiresAt \
+  --collection-group=refreshTokens \
+  --database=oauth \
+  --enable-ttl
+```
 
 ### Google OAuth setup (one-time)
 
