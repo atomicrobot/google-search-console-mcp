@@ -56,11 +56,21 @@ for ROLE in "${ROLES[@]}"; do
 done
 ```
 
-### 3. Allow deploy SA to act as the runtime SA
+### 3. Allow deploy SA to act as the runtime and build service accounts
+
+Cloud Run deploys need the deploy SA to act as both the runtime SA (`gsc-mcp-sa`) and the default Compute Engine SA (used by Cloud Build):
 
 ```bash
+# Runtime SA — assigned to the Cloud Run service
 gcloud iam service-accounts add-iam-policy-binding \
   gsc-mcp-sa@${GCP_PROJECT_ID}.iam.gserviceaccount.com \
+  --role="roles/iam.serviceAccountUser" \
+  --member="serviceAccount:$DEPLOY_SA"
+
+# Default Compute Engine SA — used by Cloud Build for --source deploys
+PROJECT_NUMBER=$(gcloud projects describe "$GCP_PROJECT_ID" --format="value(projectNumber)")
+gcloud iam service-accounts add-iam-policy-binding \
+  ${PROJECT_NUMBER}-compute@developer.gserviceaccount.com \
   --role="roles/iam.serviceAccountUser" \
   --member="serviceAccount:$DEPLOY_SA"
 ```
@@ -95,13 +105,13 @@ gcloud iam service-accounts add-iam-policy-binding "$DEPLOY_SA" \
 
 ## GitHub Setup
 
-After running `setup-gcp-ci.sh`, add the following as **repository variables** (not secrets) at **Settings → Secrets and variables → Actions → Variables tab**:
+Add the following as **environment variables** on the `prod` environment at **Settings → Environments → prod → Environment variables**:
 
 | Variable | Value | Notes |
 |---|---|---|
-| `GCP_PROJECT_ID` | Your GCP project ID | Printed by setup script |
-| `GCP_WORKLOAD_IDENTITY_PROVIDER` | `projects/932675571149/locations/global/workloadIdentityPools/github/providers/github-provider` | Printed by setup script |
-| `GCP_DEPLOY_SERVICE_ACCOUNT` | `gsc-mcp-deploy@atomic-robot-website-prod.iam.gserviceaccount.com` | Printed by setup script |
+| `GCP_PROJECT_ID` | Your GCP project ID | |
+| `GCP_WORKLOAD_IDENTITY_PROVIDER` | `projects/932675571149/locations/global/workloadIdentityPools/github/providers/github-provider` | |
+| `GCP_DEPLOY_SERVICE_ACCOUNT` | `gsc-mcp-deploy@atomic-robot-website-prod.iam.gserviceaccount.com` | |
 | `ALLOWED_DOMAIN` | Your Google Workspace domain | |
 | `GOOGLE_OAUTH_CLIENT_ID` | Your OAuth 2.0 client ID | |
 | `SERVER_URL` | Your Cloud Run service URL | |
