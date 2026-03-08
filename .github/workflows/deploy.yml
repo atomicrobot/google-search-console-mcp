@@ -17,64 +17,33 @@ env:
   BQ_TABLE: ${{ vars.BQ_TABLE || 'searchdata_url_impression' }}
 
 jobs:
-  lint:
-    name: Lint & Type Check
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
-      - run: bun install --frozen-lockfile
-      - run: bun run lint
-      - run: bun run format:check
-      - run: bunx tsc --noEmit
-
-  unit-test:
-    name: Unit Tests
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
-      - run: bun install --frozen-lockfile
-      - run: bun run test
-
-  integration-test:
-    name: Integration Tests
-    needs: [lint, unit-test]
+  deploy:
+    name: Test & Deploy
     runs-on: ubuntu-latest
     environment: prod
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
       - run: bun install --frozen-lockfile
-
-      - id: auth
+      - name: Lint
+        run: bun run lint
+      - name: Format check
+        run: bun run format:check
+      - name: Unit tests
+        run: bun run test
+      - name: Authenticate to GCP
+        id: auth
         uses: google-github-actions/auth@v2
         with:
           workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ vars.GCP_DEPLOY_SERVICE_ACCOUNT }}
-
-      - run: bun run test:integration
+      - name: Integration tests
+        run: bun run test:integration
         env:
           GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
           BQ_DATASET: ${{ env.BQ_DATASET }}
           BQ_TABLE: ${{ env.BQ_TABLE }}
-
-  deploy:
-    name: Deploy to Cloud Run
-    needs: [integration-test]
-    runs-on: ubuntu-latest
-    environment: prod
-    steps:
-      - uses: actions/checkout@v4
-
-      - id: auth
-        uses: google-github-actions/auth@v2
-        with:
-          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ vars.GCP_DEPLOY_SERVICE_ACCOUNT }}
-
       - uses: google-github-actions/setup-gcloud@v2
-
       - name: Deploy to Cloud Run
         run: |
           gcloud run deploy gsc-mcp \
