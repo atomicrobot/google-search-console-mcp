@@ -32,7 +32,7 @@ export const searchPerformanceInput = z.object({
     .default([]),
   order_by: z.enum(["clicks", "impressions", "ctr", "position"]).default("clicks"),
   order_direction: z.enum(["asc", "desc"]).default("desc"),
-  row_limit: z.number().int().min(1).max(10000).default(100),
+  row_limit: z.coerce.number().int().min(1).max(10000).default(100),
 });
 
 export const SEARCH_PERFORMANCE_DESCRIPTION = `Query Google Search Console performance data from BigQuery. This is the most flexible tool — use it when other specialized tools don't fit.

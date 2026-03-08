@@ -19,7 +19,7 @@ export const topQueriesInput = z.object({
     .regex(/^\d{4}-\d{2}-\d{2}$/)
     .optional(),
   metric: z.enum(["clicks", "impressions", "ctr", "position"]).default("clicks"),
-  limit: z.number().int().min(1).max(10000).default(20),
+  limit: z.coerce.number().int().min(1).max(10000).default(20),
   url_filter: z.string().optional(),
   url_match_type: z.enum(["equals", "contains", "regex"]).default("contains"),
   query_filter: z.string().optional(),

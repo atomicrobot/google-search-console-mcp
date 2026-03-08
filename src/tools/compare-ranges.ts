@@ -26,7 +26,7 @@ export const compareRangesInput = z.object({
     )
     .default([]),
   metric: z.enum(["clicks", "impressions", "ctr", "position"]).default("clicks"),
-  row_limit: z.number().int().min(1).max(10000).default(50),
+  row_limit: z.coerce.number().int().min(1).max(10000).default(50),
 });
 
 export const COMPARE_RANGES_DESCRIPTION = `Compare two time periods side by side with absolute and percentage deltas.

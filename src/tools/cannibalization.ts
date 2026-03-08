@@ -18,13 +18,13 @@ export const cannibalizationInput = z.object({
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/)
     .optional(),
-  min_pages: z.number().int().min(2).default(2),
-  min_impressions: z.number().int().min(0).default(10),
+  min_pages: z.coerce.number().int().min(2).default(2),
+  min_impressions: z.coerce.number().int().min(0).default(10),
   query_filter: z.string().optional(),
   query_match_type: z.enum(["equals", "contains", "regex"]).default("contains"),
   url_filter: z.string().optional(),
   url_match_type: z.enum(["equals", "contains", "regex"]).default("contains"),
-  limit: z.number().int().min(1).max(10000).default(25),
+  limit: z.coerce.number().int().min(1).max(10000).default(25),
 });
 
 export const CANNIBALIZATION_DESCRIPTION = `Find queries where multiple pages on the site compete for the same search term (keyword cannibalization).

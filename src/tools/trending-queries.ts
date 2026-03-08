@@ -7,8 +7,8 @@ export const trendingQueriesInput = z.object({
   comparison: z.enum(["wow", "mom"]).default("wow"),
   metric: z.enum(["clicks", "impressions"]).default("clicks"),
   direction: z.enum(["rising", "falling", "both"]).default("both"),
-  min_impressions: z.number().int().min(0).default(10),
-  limit: z.number().int().min(1).max(10000).default(25),
+  min_impressions: z.coerce.number().int().min(0).default(10),
+  limit: z.coerce.number().int().min(1).max(10000).default(25),
   url_filter: z.string().optional(),
   url_match_type: z.enum(["equals", "contains", "regex"]).default("contains"),
 });
