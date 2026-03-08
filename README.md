@@ -349,7 +349,6 @@ gsc-mcp-server/
 ├── Dockerfile
 ├── docker-compose.yml            # Local development with env vars
 ├── deploy.sh                     # Manual Cloud Run deployment script
-├── setup-gcp-ci.sh               # One-time GCP setup for GitHub Actions CI/CD
 ├── .env.example                  # Template for env vars
 ├── tsconfig.json
 ├── package.json
@@ -523,42 +522,18 @@ GitHub Actions auto-deploys to Cloud Run on every push to `main`. Authentication
 
 ```
 push to main
-    ├── Lint & Type Check     (parallel)
-    ├── Unit Tests            (parallel)
-    ├── Integration Tests     (needs lint + unit, authenticates via WIF, runs against real BigQuery)
-    └── Deploy to Cloud Run   (needs integration tests)
+    ├── Lint & Format check
+    ├── Unit tests
+    ├── Authenticate to GCP (WIF)
+    ├── Integration tests (real BigQuery)
+    └── Deploy to Cloud Run
 ```
 
 Defined in `.github/workflows/deploy.yml`.
 
 ### Setup
 
-1. **GCP setup (one-time):** Run the setup script to create the deploy service account, grant roles, and configure WIF:
-
-   ```bash
-   export GCP_PROJECT_ID=my-project
-   export GITHUB_REPO=your-org/google-search-console-mcp
-   ./setup-gcp-ci.sh
-   ```
-
-2. **GitHub setup:** Add the following as **repository variables** (not secrets) at **Settings → Secrets and variables → Actions → Variables tab**:
-
-   | Variable | Value | Notes |
-   |---|---|---|
-   | `GCP_PROJECT_ID` | Your GCP project ID | Printed by setup script |
-   | `GCP_WORKLOAD_IDENTITY_PROVIDER` | `projects/PROJECT_NUMBER/locations/global/workloadIdentityPools/github/providers/github-provider` | Printed by setup script |
-   | `GCP_DEPLOY_SERVICE_ACCOUNT` | `gsc-mcp-deploy@PROJECT_ID.iam.gserviceaccount.com` | Printed by setup script |
-   | `ALLOWED_DOMAIN` | Your Google Workspace domain | |
-   | `GOOGLE_OAUTH_CLIENT_ID` | Your OAuth 2.0 client ID | |
-   | `SERVER_URL` | Your Cloud Run service URL | |
-   | `FIRESTORE_OAUTH_DATABASE` | Your Firestore database name | |
-   | `GCP_REGION` | Cloud Run region | Optional, defaults to `us-east1` |
-   | `BQ_DATASET` | BigQuery dataset name | Optional, defaults to `searchconsole` |
-   | `BQ_TABLE` | BigQuery table name | Optional, defaults to `searchdata_url_impression` |
-
-   No GitHub secrets are needed. WIF handles authentication, and app secrets (`JWT_SECRET`, `GOOGLE_OAUTH_CLIENT_SECRET`) stay in GCP Secret Manager.
-
-See `docs/gcp-ci-setup.md` for full details on what the setup script does and how WIF works.
+See `docs/gcp-ci-setup.md` for full GCP and GitHub setup instructions.
 
 ---
 

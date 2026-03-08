@@ -6,10 +6,11 @@ GitHub Actions deploys to Cloud Run on every push to `main`. Authentication uses
 
 ```
 push to main
-    ├── Lint & Type Check     (no GCP auth, parallel)
-    ├── Unit Tests            (no GCP auth, parallel)
-    ├── Integration Tests     (needs lint + unit, authenticates via WIF, runs against real BigQuery)
-    └── Deploy to Cloud Run   (needs integration tests)
+    ├── Lint & Format check
+    ├── Unit tests
+    ├── Authenticate to GCP (WIF)
+    ├── Integration tests (real BigQuery)
+    └── Deploy to Cloud Run
 ```
 
 Defined in `.github/workflows/deploy.yml`.
@@ -23,32 +24,74 @@ Defined in `.github/workflows/deploy.yml`.
 - Existing runtime service account `gsc-mcp-sa` (used by Cloud Run at runtime)
 - Secrets already in Secret Manager: `gsc-mcp-oauth-secret`, `gsc-mcp-jwt-secret`
 
-### Run the setup script
+### 1. Create the deploy service account
 
 ```bash
-export GCP_PROJECT_ID=my-project
-export GITHUB_REPO=your-org/google-search-console-mcp
-./setup-gcp-ci.sh
+gcloud iam service-accounts create gsc-mcp-deploy \
+  --project="$GCP_PROJECT_ID" \
+  --display-name="GitHub Actions Deploy"
 ```
 
-This script:
+### 2. Grant roles to the deploy SA
 
-1. **Creates a dedicated deploy service account** (`gsc-mcp-deploy`) — separate from the runtime SA, scoped to CI/CD only
-2. **Grants roles to the deploy SA:**
+```bash
+DEPLOY_SA="gsc-mcp-deploy@${GCP_PROJECT_ID}.iam.gserviceaccount.com"
 
-   | Role | Purpose |
-   |---|---|
-   | `roles/run.developer` | Deploy to Cloud Run |
-   | `roles/bigquery.jobUser` | Run BQ queries (integration tests) |
-   | `roles/bigquery.dataViewer` | Read BQ data (integration tests) |
-   | `roles/secretmanager.secretAccessor` | Access secrets during deploy |
-   | `roles/cloudbuild.builds.editor` | Build container (`--source` deploy) |
-   | `roles/storage.admin` | Push build artifacts to GCS |
-   | `roles/artifactregistry.writer` | Push container images |
+ROLES=(
+  roles/run.developer                  # Deploy to Cloud Run
+  roles/bigquery.jobUser               # Run BQ queries (integration tests)
+  roles/bigquery.dataViewer            # Read BQ data (integration tests)
+  roles/secretmanager.secretAccessor   # Access secrets during deploy
+  roles/cloudbuild.builds.editor       # Build container (--source deploy)
+  roles/storage.admin                  # Push build artifacts to GCS
+  roles/artifactregistry.writer        # Push container images
+  roles/serviceusage.serviceUsageConsumer  # Required for Cloud Build to use project services
+)
 
-3. **Grants `iam.serviceAccountUser`** on `gsc-mcp-sa` so the deploy SA can assign it as the Cloud Run runtime SA
-4. **Creates a Workload Identity Federation pool and OIDC provider** with an attribute condition restricting it to your GitHub repo
-5. **Binds the GitHub repo** to the deploy SA via WIF
+for ROLE in "${ROLES[@]}"; do
+  gcloud projects add-iam-policy-binding "$GCP_PROJECT_ID" \
+    --member="serviceAccount:$DEPLOY_SA" \
+    --role="$ROLE" \
+    --quiet
+done
+```
+
+### 3. Allow deploy SA to act as the runtime SA
+
+```bash
+gcloud iam service-accounts add-iam-policy-binding \
+  gsc-mcp-sa@${GCP_PROJECT_ID}.iam.gserviceaccount.com \
+  --role="roles/iam.serviceAccountUser" \
+  --member="serviceAccount:$DEPLOY_SA"
+```
+
+### 4. Create Workload Identity Federation pool and OIDC provider
+
+```bash
+gcloud iam workload-identity-pools create github \
+  --project="$GCP_PROJECT_ID" \
+  --location="global" \
+  --display-name="GitHub Actions"
+
+gcloud iam workload-identity-pools providers create-oidc github-provider \
+  --project="$GCP_PROJECT_ID" \
+  --location="global" \
+  --workload-identity-pool="github" \
+  --display-name="GitHub OIDC" \
+  --attribute-mapping="google.subject=assertion.sub,attribute.repository=assertion.repository" \
+  --attribute-condition="assertion.repository == '${GITHUB_REPO}'" \
+  --issuer-uri="https://token.actions.githubusercontent.com"
+```
+
+### 5. Bind the GitHub repo to the deploy SA
+
+```bash
+PROJECT_NUMBER=$(gcloud projects describe "$GCP_PROJECT_ID" --format="value(projectNumber)")
+
+gcloud iam service-accounts add-iam-policy-binding "$DEPLOY_SA" \
+  --role="roles/iam.workloadIdentityUser" \
+  --member="principalSet://iam.googleapis.com/projects/${PROJECT_NUMBER}/locations/global/workloadIdentityPools/github/attribute.repository/${GITHUB_REPO}"
+```
 
 ## GitHub Setup
 
