@@ -9,7 +9,6 @@ import { handleStreamableHttp, handleStreamableHttpDelete } from "@transport/str
 
 const config = loadConfig();
 const app = express();
-const mcpServer = createMcpServer();
 
 // Body parsing
 app.use(express.json());
@@ -38,8 +37,8 @@ app.get("/health", (_req, res) => {
 app.use(oauthRouter);
 
 // Authenticated MCP transport (Streamable HTTP)
-app.post("/mcp", authMiddleware, (req, res) => handleStreamableHttp(req, res, mcpServer));
-app.get("/mcp", authMiddleware, (req, res) => handleStreamableHttp(req, res, mcpServer));
+app.post("/mcp", authMiddleware, (req, res) => handleStreamableHttp(req, res, createMcpServer));
+app.get("/mcp", authMiddleware, (req, res) => handleStreamableHttp(req, res, createMcpServer));
 app.delete("/mcp", authMiddleware, (req, res) => handleStreamableHttpDelete(req, res));
 
 app.listen(config.PORT, () => {

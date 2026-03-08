@@ -12,7 +12,7 @@ const transports = new Map<string, StreamableHTTPServerTransport>();
 export async function handleStreamableHttp(
   req: Request,
   res: Response,
-  server: McpServer,
+  createServer: () => McpServer,
 ): Promise<void> {
   const sessionId = req.headers["mcp-session-id"] as string | undefined;
 
@@ -38,6 +38,7 @@ export async function handleStreamableHttp(
     }
   };
 
+  const server = createServer();
   await server.connect(transport);
   await transport.handleRequest(req, res, req.body);
 }
