@@ -15,7 +15,17 @@ export const integrationTestLog = createRequestLogger({
  */
 export function setupIntegration(): void {
   _resetClient();
-  loadConfig(process.env);
+  loadConfig({
+    ...process.env,
+    // Provide defaults for vars not needed by BigQuery but required by config schema
+    GOOGLE_OAUTH_CLIENT_ID: process.env.GOOGLE_OAUTH_CLIENT_ID ?? "unused-in-integration-tests",
+    GOOGLE_OAUTH_CLIENT_SECRET:
+      process.env.GOOGLE_OAUTH_CLIENT_SECRET ?? "unused-in-integration-tests",
+    ALLOWED_DOMAIN: process.env.ALLOWED_DOMAIN ?? "test.com",
+    SERVER_URL: process.env.SERVER_URL ?? "http://localhost:8080",
+    JWT_SECRET: process.env.JWT_SECRET ?? "integration-test-secret-not-real",
+    FIRESTORE_OAUTH_DATABASE: process.env.FIRESTORE_OAUTH_DATABASE ?? "unused-in-integration-tests",
+  });
 }
 
 /** Returns a YYYY-MM-DD string for n days ago. */
