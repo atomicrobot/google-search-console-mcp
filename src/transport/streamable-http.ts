@@ -16,9 +16,18 @@ export async function handleStreamableHttp(
 ): Promise<void> {
   const sessionId = req.headers["mcp-session-id"] as string | undefined;
 
-  if (sessionId && transports.has(sessionId)) {
-    const transport = transports.get(sessionId)!;
-    await transport.handleRequest(req, res, req.body);
+  if (sessionId) {
+    const transport = transports.get(sessionId);
+    if (transport) {
+      await transport.handleRequest(req, res, req.body);
+      return;
+    }
+    // Stale session (e.g. server restarted after deploy) — tell client to re-initialize
+    res.status(404).json({
+      jsonrpc: "2.0",
+      error: { code: -32000, message: "Session not found. Please reconnect." },
+      id: null,
+    });
     return;
   }
 
