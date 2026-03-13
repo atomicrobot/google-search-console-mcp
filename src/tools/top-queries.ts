@@ -13,16 +13,33 @@ export const topQueriesInput = z.object({
   start_date: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/)
-    .optional(),
+    .optional()
+    .describe("Start date in YYYY-MM-DD format (default: 28 days ago)"),
   end_date: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/)
-    .optional(),
-  metric: z.enum(["clicks", "impressions", "ctr", "position"]).default("clicks"),
-  limit: z.coerce.number().int().min(1).max(10000).default(20),
-  url_filter: z.string().optional(),
-  url_match_type: z.enum(["equals", "contains", "regex"]).default("contains"),
-  query_filter: z.string().optional(),
+    .optional()
+    .describe("End date in YYYY-MM-DD format (default: today)"),
+  metric: z
+    .enum(["clicks", "impressions", "ctr", "position"])
+    .default("clicks")
+    .describe("Metric to rank queries by"),
+  limit: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(10000)
+    .default(20)
+    .describe("Maximum number of queries to return"),
+  url_filter: z.string().optional().describe("Filter to pages matching this URL or URL pattern"),
+  url_match_type: z
+    .enum(["equals", "contains", "regex"])
+    .default("contains")
+    .describe("How to match the url_filter: exact match, substring, or regex"),
+  query_filter: z
+    .string()
+    .optional()
+    .describe("Filter to queries containing this search term text"),
 });
 
 export const TOP_QUERIES_DESCRIPTION = `Get top search queries ranked by a metric.

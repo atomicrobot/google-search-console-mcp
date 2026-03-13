@@ -4,13 +4,36 @@ import { getWowPeriods, getMomPeriods } from "@lib/date-utils";
 import type { RequestLogger } from "@lib/logger";
 
 export const trendingQueriesInput = z.object({
-  comparison: z.enum(["wow", "mom"]).default("wow"),
-  metric: z.enum(["clicks", "impressions"]).default("clicks"),
-  direction: z.enum(["rising", "falling", "both"]).default("both"),
-  min_impressions: z.coerce.number().int().min(0).default(10),
-  limit: z.coerce.number().int().min(1).max(10000).default(25),
-  url_filter: z.string().optional(),
-  url_match_type: z.enum(["equals", "contains", "regex"]).default("contains"),
+  comparison: z
+    .enum(["wow", "mom"])
+    .default("wow")
+    .describe("Time period comparison: wow = week-over-week, mom = month-over-month"),
+  metric: z
+    .enum(["clicks", "impressions"])
+    .default("clicks")
+    .describe("Metric to measure change in"),
+  direction: z
+    .enum(["rising", "falling", "both"])
+    .default("both")
+    .describe("Filter to only rising, only falling, or both directions"),
+  min_impressions: z.coerce
+    .number()
+    .int()
+    .min(0)
+    .default(10)
+    .describe("Minimum impressions in the current period to include a query"),
+  limit: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(10000)
+    .default(25)
+    .describe("Maximum number of trending queries to return"),
+  url_filter: z.string().optional().describe("Filter to pages matching this URL or URL pattern"),
+  url_match_type: z
+    .enum(["equals", "contains", "regex"])
+    .default("contains")
+    .describe("How to match the url_filter: exact match, substring, or regex"),
 });
 
 export const TRENDING_QUERIES_DESCRIPTION = `Find queries with the biggest changes in performance — surfaces what's gaining or losing momentum.

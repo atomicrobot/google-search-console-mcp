@@ -11,22 +11,53 @@ import {
 import type { RequestLogger } from "@lib/logger";
 
 export const compareRangesInput = z.object({
-  period1_start: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  period1_end: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  period2_start: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  period2_end: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  dimensions: z.array(z.enum(["query", "page", "country", "device", "date"])).default([]),
+  period1_start: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .describe("Start date of the baseline (earlier) period in YYYY-MM-DD format"),
+  period1_end: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .describe("End date of the baseline (earlier) period in YYYY-MM-DD format"),
+  period2_start: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .describe("Start date of the comparison (later) period in YYYY-MM-DD format"),
+  period2_end: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .describe("End date of the comparison (later) period in YYYY-MM-DD format"),
+  dimensions: z
+    .array(z.enum(["query", "page", "country", "device", "date"]))
+    .default([])
+    .describe("Dimensions to group results by"),
   filters: z
     .array(
       z.object({
-        dimension: z.enum(["query", "page", "country", "device"]),
-        operator: z.enum(["equals", "contains", "regex", "not_contains", "not_equals"]),
-        expression: z.string(),
+        dimension: z
+          .enum(["query", "page", "country", "device"])
+          .describe("The dimension to filter on"),
+        operator: z
+          .enum(["equals", "contains", "regex", "not_contains", "not_equals"])
+          .describe("Filter comparison operator"),
+        expression: z
+          .string()
+          .describe("The value to filter against, e.g. a URL, query text, or country code"),
       }),
     )
-    .default([]),
-  metric: z.enum(["clicks", "impressions", "ctr", "position"]).default("clicks"),
-  row_limit: z.coerce.number().int().min(1).max(10000).default(50),
+    .default([])
+    .describe("Filters to narrow results by dimension values"),
+  metric: z
+    .enum(["clicks", "impressions", "ctr", "position"])
+    .default("clicks")
+    .describe("Primary metric to compute deltas for and sort by"),
+  row_limit: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(10000)
+    .default(50)
+    .describe("Maximum number of rows to return"),
 });
 
 export const COMPARE_RANGES_DESCRIPTION = `Compare two time periods side by side with absolute and percentage deltas.

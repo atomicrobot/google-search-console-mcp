@@ -4,16 +4,24 @@ import { getExtendedDateRange } from "@lib/date-utils";
 import type { RequestLogger } from "@lib/logger";
 
 export const pagePerformanceInput = z.object({
-  url: z.string().min(1),
-  url_match_type: z.enum(["equals", "contains", "regex"]).default("contains"),
+  url: z
+    .string()
+    .min(1)
+    .describe("The page URL or URL pattern to analyze, e.g. https://example.com/pricing or /blog/"),
+  url_match_type: z
+    .enum(["equals", "contains", "regex"])
+    .default("contains")
+    .describe("How to match the url parameter: exact match, substring, or regex"),
   start_date: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/)
-    .optional(),
+    .optional()
+    .describe("Start date in YYYY-MM-DD format (default: 90 days ago)"),
   end_date: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/)
-    .optional(),
+    .optional()
+    .describe("End date in YYYY-MM-DD format (default: today)"),
 });
 
 export const PAGE_PERFORMANCE_DESCRIPTION = `Deep dive on a specific page or URL pattern over time. Returns daily time series plus summary stats.

@@ -15,24 +15,45 @@ export const searchPerformanceInput = z.object({
   start_date: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/)
-    .optional(),
+    .optional()
+    .describe("Start date in YYYY-MM-DD format (default: 28 days ago)"),
   end_date: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/)
-    .optional(),
-  dimensions: z.array(z.enum(["query", "page", "country", "device", "date"])).default([]),
+    .optional()
+    .describe("End date in YYYY-MM-DD format (default: today)"),
+  dimensions: z
+    .array(z.enum(["query", "page", "country", "device", "date"]))
+    .default([])
+    .describe("Dimensions to group results by"),
   filters: z
     .array(
       z.object({
-        dimension: z.enum(["query", "page", "country", "device"]),
-        operator: z.enum(["equals", "contains", "regex", "not_contains", "not_equals"]),
-        expression: z.string(),
+        dimension: z
+          .enum(["query", "page", "country", "device"])
+          .describe("The dimension to filter on"),
+        operator: z
+          .enum(["equals", "contains", "regex", "not_contains", "not_equals"])
+          .describe("Filter comparison operator"),
+        expression: z
+          .string()
+          .describe("The value to filter against, e.g. a URL, query text, or country code"),
       }),
     )
-    .default([]),
-  order_by: z.enum(["clicks", "impressions", "ctr", "position"]).default("clicks"),
-  order_direction: z.enum(["asc", "desc"]).default("desc"),
-  row_limit: z.coerce.number().int().min(1).max(10000).default(100),
+    .default([])
+    .describe("Filters to narrow results by dimension values"),
+  order_by: z
+    .enum(["clicks", "impressions", "ctr", "position"])
+    .default("clicks")
+    .describe("Metric to sort results by"),
+  order_direction: z.enum(["asc", "desc"]).default("desc").describe("Sort direction"),
+  row_limit: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(10000)
+    .default(100)
+    .describe("Maximum number of rows to return"),
 });
 
 export const SEARCH_PERFORMANCE_DESCRIPTION = `Query Google Search Console performance data from BigQuery. This is the most flexible tool — use it when other specialized tools don't fit.

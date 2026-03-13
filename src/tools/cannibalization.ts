@@ -13,18 +13,42 @@ export const cannibalizationInput = z.object({
   start_date: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/)
-    .optional(),
+    .optional()
+    .describe("Start date in YYYY-MM-DD format (default: 28 days ago)"),
   end_date: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/)
-    .optional(),
-  min_pages: z.coerce.number().int().min(2).default(2),
-  min_impressions: z.coerce.number().int().min(0).default(10),
-  query_filter: z.string().optional(),
-  query_match_type: z.enum(["equals", "contains", "regex"]).default("contains"),
-  url_filter: z.string().optional(),
-  url_match_type: z.enum(["equals", "contains", "regex"]).default("contains"),
-  limit: z.coerce.number().int().min(1).max(10000).default(25),
+    .optional()
+    .describe("End date in YYYY-MM-DD format (default: today)"),
+  min_pages: z.coerce
+    .number()
+    .int()
+    .min(2)
+    .default(2)
+    .describe("Minimum number of pages ranking for the same query to flag as cannibalization"),
+  min_impressions: z.coerce
+    .number()
+    .int()
+    .min(0)
+    .default(10)
+    .describe("Minimum total impressions for a query to be included"),
+  query_filter: z.string().optional().describe("Filter to queries matching this search term text"),
+  query_match_type: z
+    .enum(["equals", "contains", "regex"])
+    .default("contains")
+    .describe("How to match the query_filter: exact match, substring, or regex"),
+  url_filter: z.string().optional().describe("Filter to pages matching this URL or URL pattern"),
+  url_match_type: z
+    .enum(["equals", "contains", "regex"])
+    .default("contains")
+    .describe("How to match the url_filter: exact match, substring, or regex"),
+  limit: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(10000)
+    .default(25)
+    .describe("Maximum number of cannibalized queries to return"),
 });
 
 export const CANNIBALIZATION_DESCRIPTION = `Find queries where multiple pages on the site compete for the same search term (keyword cannibalization).
